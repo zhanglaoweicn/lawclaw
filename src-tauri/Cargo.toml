@@ -1,0 +1,27 @@
+[package]
+name = "lawclaw"
+version = "0.1.0"
+description = "LawClaw 律爪 — 律师智能体桌面端"
+license = "MIT"
+authors = ["you"]
+edition = "2021"
+
+[lib]
+name = "lawclaw_lib"
+crate-type = ["rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-shell = "2"
+tauri-plugin-notification = "2"
+tokio = { version = "1", features = ["time", "rt", "macros"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[package.metadata]
+tauri = { configPath = "tauri.conf.json" }
+tauri-winres = {}

@@ -1,0 +1,10 @@
+{
+  "schema_version": "0.1.0",
+  "package_id": "claude-for-legal",
+  "host_id": "portable",
+  "bundle_id": "commercial-legal",
+  "skill_id": "commercial-escalation-flagger",
+  "installed_at": "2026-07-05T08:03:32.266965+00:00",
+  "release": "unknown",
+  "managed_by": "install.py (portable portable release)"
+}

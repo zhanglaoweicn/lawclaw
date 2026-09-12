@@ -108,6 +108,8 @@ export const useChatStore = defineStore('chat', () => {
   const runningSessionId = ref<string | null>(null)
   /** run 进行中被切走的会话 → 消息缓冲（切换回来时恢复，完成时落盘） */
   const sessionBuffers = new Map<string, Message[]>()
+  /** 每个会话最近一次 run 的步骤（切换会话时随视图一起切换，不再跨会话串台） */
+  const sessionSteps = new Map<string, RunStep[]>()
   /** 最近一次 run 是否以错误收场（驱动步骤面板的失败态展示） */
   const runFailed = ref(false)
   /** 当前 run 是否正在进行中 */
@@ -132,8 +134,9 @@ export const useChatStore = defineStore('chat', () => {
   })
 
   function _applyStepStarted(evt: StepStartedEvent) {
+    const list = _runSteps()
     // 去重（同一 stepId 只 push 一次）
-    if (steps.value.find(s => s.stepId === evt.stepId)) return
+    if (list.find(s => s.stepId === evt.stepId)) return
     const step: RunStep = {
       stepId: evt.stepId,
       stepIndex: evt.stepIndex,
@@ -143,27 +146,30 @@ export const useChatStore = defineStore('chat', () => {
       status: 'running',
       startedAt: evt.startedAt || '',
     }
-    steps.value.push(step)
+    list.push(step)
   }
   function _applyStepFinished(evt: StepFinishedEvent) {
-    const s = steps.value.find(x => x.stepId === evt.stepId)
+    const s = _runSteps().find(x => x.stepId === evt.stepId)
     if (!s) return
     s.status = evt.status as RunStep['status']
     s.finishedAt = evt.finishedAt
   }
   function _applyAgUiEvent(evt: AgUiEvent) {
+    // 步骤面板是「当前会话」的视图：run 属于被切走的会话时，事件写进该会话自己的列表，
+    // 但不要显示在当前会话里（否则新对话会看到上一个对话的推理/工具调用过程）
+    const list = _runSteps()
     if (evt.type === 'STEP_STARTED') _applyStepStarted(evt)
     else if (evt.type === 'STEP_FINISHED') _applyStepFinished(evt)
     else if (evt.type === 'TOOL_CALL_START') {
       // 关联到最近的 running tool step（后端保证 TOOL_CALL_START 在 STEP_STARTED(kind='tool') 后立刻发）
-      const lastToolStep = [...steps.value].reverse().find(s => s.kind === 'tool' && s.status === 'running')
+      const lastToolStep = [...list].reverse().find(s => s.kind === 'tool' && s.status === 'running')
       if (lastToolStep) {
         lastToolStep.toolCallId = evt.toolCallId
         lastToolStep.toolName = evt.toolName
       }
     }
     else if (evt.type === 'TOOL_CALL_RESULT') {
-      const step = steps.value.find(s => s.toolCallId === evt.toolCallId)
+      const step = list.find(s => s.toolCallId === evt.toolCallId)
       if (step) {
         step.toolPreview = evt.preview || ''
       }
@@ -175,7 +181,7 @@ export const useChatStore = defineStore('chat', () => {
     else if (evt.type === 'RUN_ERROR') {
       // 官方规范：错误终止以 RUN_ERROR 结束（与 RUN_FINISHED 互斥，不会再收到 FINISHED）
       runFailed.value = true
-      for (const s of steps.value) {
+      for (const s of list) {
         if (s.status === 'running') s.status = 'failed'
       }
     }
@@ -183,16 +189,28 @@ export const useChatStore = defineStore('chat', () => {
       // 收尾：确保所有 running step 都标记完成（错误终止走 RUN_ERROR 分支，不会到这里）
       const failed = false
       runFailed.value = failed
-      for (const s of steps.value) {
+      for (const s of list) {
         if (s.status === 'running') {
           s.status = failed ? 'failed' : 'ok'
         }
       }
     }
   }
+  /** 本次 run 的步骤应写入哪个列表：当前会话 → 可见的 steps；被切走的会话 → 它自己的缓存 */
+  function _runSteps(): RunStep[] {
+    const owner = runningSessionId.value
+    if (!owner || owner === activeSessionId.value) return steps.value
+    let arr = sessionSteps.get(owner)
+    if (!arr) { arr = []; sessionSteps.set(owner, arr) }
+    return arr
+  }
   function _resetRunState() {
     steps.value = []
+    const id = activeSessionId.value
+    if (id) sessionSteps.set(id, [])   // 该会话开始新一次 run：清掉它上一轮的步骤缓存
     currentRunId.value = null
+    toolActivity.value = null
+    runFailed.value = false
   }
 
   // Per-request abort flag — set by abortCurrentMessage, checked in .then() and callbacks
@@ -260,11 +278,18 @@ export const useChatStore = defineStore('chat', () => {
       if (loading.value && runningSessionId.value === activeSessionId.value) {
         sessionBuffers.set(activeSessionId.value, messages.value)
       }
+      // 步骤面板同理：把当前会话的步骤留下，换到目标会话自己的那份（新会话 → 空）
+      sessionSteps.set(activeSessionId.value, steps.value)
     }
     activeSessionId.value = id
     // 切回正在流式输出的会话时恢复缓冲（否则读到的是落盘前的旧状态）
     const buffered = sessionBuffers.get(id)
     messages.value = buffered ? buffered : loadMessages(id)
+    // 步骤/进度条：切到目标会话自己的步骤（新对话即空面板，不会残留上一个对话的推理与工具调用）
+    steps.value = sessionSteps.get(id) ?? []
+    currentRunId.value = null
+    toolActivity.value = null
+    runFailed.value = false
   }
 
   function newSession(matterId?: string) {
@@ -306,6 +331,8 @@ export const useChatStore = defineStore('chat', () => {
     if (idx === -1) return
     sessions.value.splice(idx, 1)
     localStorage.removeItem(MESSAGES_PREFIX + id)
+    sessionSteps.delete(id)      // 连同该会话的运行缓冲一起清掉
+    sessionBuffers.delete(id)
     saveSessions(sessions.value)
     if (id === activeSessionId.value) {
       if (sessions.value.length > 0) {

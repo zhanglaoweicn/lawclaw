@@ -18,8 +18,8 @@ export function useSettingsForm() {
   })
 
   function loadFromStore() {
-    form.baseUrl = setupStore.baseUrl || 'https://apihub.agnes-ai.com/v1'
-    form.model = setupStore.model || 'agnes-2.0-flash'
+    form.baseUrl = setupStore.baseUrl || 'https://api.deepseek.com/v1'
+    form.model = setupStore.model || 'deepseek-flash'
     form.apiKey = setupStore.apiKey || ''
     form.name = setupStore.profile?.name || ''
     form.firm = setupStore.profile?.firm || ''
@@ -110,13 +110,13 @@ export function useSettingsForm() {
 
   // Provider presets（Anthropic 官方 API 非 OpenAI 兼容，需经代理的用户请手填代理地址）
   const PROVIDER_PRESETS = [
-    { label: 'Agnes AI (默认)', baseUrl: 'https://apihub.agnes-ai.com/v1', model: 'agnes-2.0-flash' },
+    { label: 'DeepSeek（默认）', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-flash' },
     { label: 'OpenAI', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o' },
-    { label: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
     { label: '智谱 GLM', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-plus' },
     { label: '百度千帆', baseUrl: 'https://aip.baidubce.com/rpc/2.0/ai/custom/v1/wenxinworkshop/chat', model: 'ernie-4.0' },
     { label: '阿里百炼', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus' },
     { label: '本地 Ollama', baseUrl: 'http://localhost:11434/v1', model: 'llama3.1' },
+    { label: 'Agnes AI', baseUrl: 'https://apihub.agnes-ai.com/v1', model: 'agnes-2.0-flash' },
   ]
 
   function applyPreset(preset: typeof PROVIDER_PRESETS[0]) {

@@ -63,9 +63,9 @@ try:
 except Exception as _wd_err:
     print(f"[watchdog] 初始化失败（不影响其他功能）: {_wd_err}")
 
-DEFAULT_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://apihub.agnes-ai.com/v1")
+DEFAULT_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.deepseek.com/v1")
 DEFAULT_API_KEY = os.getenv("OPENAI_API_KEY", "")
-DEFAULT_MODEL = os.getenv("LAWCLAW_MODEL", "agnes-2.0-flash")
+DEFAULT_MODEL = os.getenv("LAWCLAW_MODEL", "deepseek-flash")
 
 # ── 律师专属法律系统提示词（支持执业画像动态注入） ──
 LAWYER_SYSTEM_PROMPT = """你是 LawClaw 律爪，一位专业的中国法律 AI 助手，服务于独立执业律师。
@@ -1581,7 +1581,7 @@ def handle_initialize(api_key=None, base_url=None, model=None):
         "version": "0.1.0",
         "name": "LawClaw",
         "model": model or DEFAULT_MODEL,
-        "provider": "agnes",
+        "provider": "deepseek",
         "configured": bool(key),
     }
 
@@ -2089,7 +2089,7 @@ class StdinServer:
         self.output.flush()
 
     def run(self):
-        self.send(json.dumps({"event": "ready", "model": "agnes-2.0-flash", "ag_ui_version": "0.1"}))
+        self.send(json.dumps({"event": "ready", "model": "deepseek-flash", "ag_ui_version": "0.1"}))
         for line in sys.stdin:
             line = line.strip()
             if not line:
@@ -2149,7 +2149,7 @@ class WsServer:
         try:
             await websocket.send(json.dumps({
                 "event": "ready",
-                "model": "agnes-2.0-flash",
+                "model": "deepseek-flash",
                 "ag_ui_version": "0.2",   # 对齐官方 ag-ui 协议（RUN_ERROR/REASONING_*/threadId/timestamp）
             }))
         except Exception:

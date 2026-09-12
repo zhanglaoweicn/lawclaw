@@ -25,7 +25,7 @@
             <el-input v-model="form.baseUrl" placeholder="https://api.openai.com/v1" />
           </el-form-item>
           <el-form-item label="模型名称">
-            <el-input v-model="form.model" placeholder="agnes-2.0-flash" />
+            <el-input v-model="form.model" placeholder="deepseek-flash" />
           </el-form-item>
           <el-form-item label="API Key">
             <el-input v-model="form.apiKey" type="password" show-password placeholder="sk-..." />
@@ -198,8 +198,8 @@ const SECRET_PLACEHOLDER = '••••••'
 const step = ref(0)
 
 const form = reactive({
-  baseUrl: setupStore.baseUrl || 'https://apihub.agnes-ai.com/v1',
-  model: setupStore.model || 'agnes-2.0-flash',
+  baseUrl: setupStore.baseUrl || 'https://api.deepseek.com/v1',
+  model: setupStore.model || 'deepseek-flash',
   apiKey: setupStore.apiKey || '',
   name: setupStore.profile?.name || '',
   firm: setupStore.profile?.firm || '',

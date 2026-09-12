@@ -28,8 +28,8 @@ function loadState(): SetupState {
   } catch { /* ignore */ }
   return {
     apiKey: '',
-    baseUrl: 'https://apihub.agnes-ai.com/v1',
-    model: 'agnes-2.0-flash',
+    baseUrl: 'https://api.deepseek.com/v1',
+    model: 'deepseek-flash',
     profile: null,
     completed: false,
   }
@@ -81,8 +81,8 @@ export const useSetupStore = defineStore('setup', () => {
 
   function reset() {
     state.value = {
-      apiKey: '', baseUrl: 'https://apihub.agnes-ai.com/v1',
-      model: 'agnes-2.0-flash', profile: null, completed: false,
+      apiKey: '', baseUrl: 'https://api.deepseek.com/v1',
+      model: 'deepseek-flash', profile: null, completed: false,
     }
     localStorage.removeItem(SETUP_KEY)
   }

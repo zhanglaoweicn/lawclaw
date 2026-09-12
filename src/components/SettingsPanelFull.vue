@@ -21,7 +21,7 @@
               <el-input v-model="form.baseUrl" placeholder="https://api.openai.com/v1" />
             </el-form-item>
             <el-form-item label="模型名称">
-              <el-input v-model="form.model" placeholder="agnes-2.0-flash" />
+              <el-input v-model="form.model" placeholder="deepseek-flash" />
             </el-form-item>
             <el-form-item label="API Key">
               <el-input v-model="form.apiKey" type="password" show-password placeholder="sk-..." />

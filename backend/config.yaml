@@ -4,8 +4,8 @@ version: "0.1.0"
 
 model:
   provider: "custom"
-  name: "agnes-2.0-flash"
-  base_url: "https://apihub.agnes-ai.com/v1"
+  name: "deepseek-flash"
+  base_url: "https://api.deepseek.com/v1"
 
 agent:
   max_iterations: 30

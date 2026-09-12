@@ -37,7 +37,7 @@
 - **pnpm build**: compiles clean (vue-tsc --noEmit, vite build)
 - **NPC API deprecated**: discovered `https://flk.npc.gov.cn/api/` returns SPA HTML since Aug 2025 Phase II redesign
 - **Migrated legal search to 元典**: rewrote `handle_legal_search()` in `backend/main.py` and `tools/legal_search.py` to `POST https://open.chineselaw.com/open/rh_fg_search` with `X-API-Key` header
-- **Found 6 professional legal skill packs** (元力工场, 69 skills total) under `D:\Down\toolkits_legal-skillpack-*`
+- **Found 6 professional legal skill packs** (元力工场, 69 skills total) under `<本地参考仓库>\toolkits_legal-skillpack-*`
 - **Analyzed all 6 packs**: bundle.json → SKILL.md (YAML frontmatter) → profiles/ → connectors/ → workflows/ format. install.py auto-detects 8 agent frameworks. Primary data source: 元典 MCP
 - **Installed 4 packs** (48 skills) into `backend/.hermes/skills/`:
   - `litigation-legal` (19 skills: matter-intake, evidence-review, demand-draft, brief-drafter, chronology, claim-chart, subpoena, deposition, etc.)
@@ -126,7 +126,7 @@
 - **路线图 #2 基础技能去重**：下线 `legal/contract-review`、`legal/legal-research`（与专业包 commercial-review / prc-legal-research-law-search 重复）——从两份 config.yaml enabled 移除 + 删除 backend/.hermes/skills/legal/ 部署目录（根 skills/legal/ 存档保留）；`legal/fee-calculator`、`legal/document-draft` 保留（无包等价物，工作台快捷卡仍映射）。前端快捷卡早已映射专业包 id，无破坏
 - **路线图 #4 冷启动访谈接线**：启用 3 个技能包冷启动访谈（litigation/corporate/commercial-cold-start-interview，配置计数 26→27），SKILL_DISPLAY_NAMES 补中文（诉讼/公司/合同业务初始化访谈）；环境变量 LEGAL_AGENT_PROFILE_HOME（backend/.hermes/profiles）此前已接线，访谈把执业画像写入 profile.md 供下游包技能读取。端到端实证：chat(skill_id) 正常进入访谈 Part 0（使用者/角色/立场分流）
 - **P0 发现与修复——agent 工具层在 Python 3.14 下全线瘫痪**：冷启动访谈 e2e 暴露 `DaemonThreadPoolExecutor 没有 _initializer` ——3.14 重构了 ThreadPoolExecutor 内部（`_initializer/_initargs` → `_create_worker_context` WorkerContext；`_worker` 4参→3参）。`tools/daemon_pool.py:_adjust_thread_count` 镜像的是 3.8–3.13 私有结构 → 所有工具调用（read_file/terminal/skill_view…）进入实现前即炸。**此前未暴露的原因**：纯对话与 RPC 直连（legal_search 等）不走工具层，audit 的 chat 用例恰好无工具调用。修复：`_adjust_thread_count` 按 `_create_worker_context` 属性分派新旧两代 spawn 签名（3.14 走官方 WorkerContext 路径，≤3.13 走原镜像）。修复后访谈正常 + audit 12/12
-- **路线图 #3 阻塞**：ip-legal / ai-governance 两包源（原 D:\Down	oolkits_legal-skillpack-*）已被清理，无法安装（21 技能）——待用户提供包源后按既有流程接入
+- **路线图 #3 阻塞**：ip-legal / ai-governance 两包源（原 <本地参考仓库>	oolkits_legal-skillpack-*）已被清理，无法安装（21 技能）——待用户提供包源后按既有流程接入
 - **教训**：audit 的 chat 用例未覆盖工具调用路径——"12/12 通过"不等于工具层健康；后续回归应加一条"强制工具调用"用例（如让 agent 读一个文件）
 - **回归**：citations 单测 12/12、audit 12/12（修复后复跑）、冷启动访谈 e2e 通过；后端重启加载新配置与修复
 ### Done (功能迭代 — 引用可信度 2.0, Sep 11)
@@ -171,7 +171,7 @@
 - **同步方法论教训**：上游重构拆分模块后，`list_xxx` 类"读配置"接口的通过不代表"实际功能"正常——工具注册类验证要看运行时 import 路径（`python -c "import tools; print(tools.__path__)"`）
 
 ### Done (发行链路端到端实证 — portable 全链闭合, Sep 11)
-- **portable 形态端到端实测通过**：release/payload + LawClaw.exe + WebView2Loader.dll → 启动 → **9876 由 payload 内捆绑 runtime 拉起**（CommandLine: `D:\LawClaw
+- **portable 形态端到端实测通过**：release/payload + LawClaw.exe + WebView2Loader.dll → 启动 → **9876 由 payload 内捆绑 runtime 拉起**（CommandLine: `<项目目录>
 elease\payloadackend
 untime\Scripts\python.exe main.py --ws`，父进程 = lawclaw.exe 12356）→ 无障碍点击关窗 → 9876 释放、后端终止、应用 exit 0
 - **构建脚本修正**（scripts/build_release.py）：tauri step 补 MinGW PATH 前缀（缺 crt2.o 报错的根因——之前两次"资源映射失败"其实是 PATH 缺失）；overlay 映射修正为目录形式 `{"../release/payload": "./"}`（glob+空 target 不生效）
@@ -207,7 +207,7 @@ untime\Scripts\python.exe main.py --ws`，父进程 = lawclaw.exe 12356）→ �
 ### Done (上游同步 — hermes-agent 2026-09-11 版重新对基, Sep 11)
 - **决策**：上游 fork 点（5/29）以来结构性巨变（run_agent 4590→1556 行 Mixin 化、mcp_tool 3711→704 行拆 7 子模块、hermes_state 拆 24 子模块、新增 26 根模块），评估后立项重新对基
 - **安全网**：补 .gitignore（.env/.hermes/target 等排除）+ git init 基线快照 `8198f27`（1330 文件，密钥未入库）——**回滚 = `git reset --hard 8198f27`**
-- **方法**：克隆上游 depth-1（`D:\Down\hermes-upstream`）→ 覆盖 Hermes 管理的包树（run_agent/agent/tools/providers/hermes_cli/cron/gateway/plugins/acp_adapter + 根全部 .py）→ 保留本地增量（backend/ 整体、tools/legal_search.py + mixture_of_agents_tool.py、agent/google* 三件、skills/ 整体、src*/scripts/seed、AGENTS.md/README）
+- **方法**：克隆上游 depth-1（`<本地参考仓库>\hermes-upstream`）→ 覆盖 Hermes 管理的包树（run_agent/agent/tools/providers/hermes_cli/cron/gateway/plugins/acp_adapter + 根全部 .py）→ 保留本地增量（backend/ 整体、tools/legal_search.py + mixture_of_agents_tool.py、agent/google* 三件、skills/ 整体、src*/scripts/seed、AGENTS.md/README）
 - **集成面实测存活**：AIAgent 构造参数与三回调（tool_start/complete/thinking_callback）在上游 Mixin 化后原样存在；`run_conversation` 经 TurnFacadeMixin 包装仍可用
 - **我方旧补丁退役**：7 月手修的 `_MCP_NEW_HTTP` 漏判已被上游更完整方案取代（新旧 SDK API 名双兼容，处理 mcp 2.0 移除旧名）
 - **上游增量收益**：MCP 七模块架构（transport/server_run/health/sampling/discovery/common/config）+ 进程死亡监督器 + 发现冷却 + stdio 预检——元典 SSE 服务器稳定性增强；**元典 `sampling: {enabled: false}` 配置在新 SamplingHandler 模块下验证仍被尊重**（list_mcp_servers=3 全通）
@@ -239,7 +239,7 @@ untime\Scripts\python.exe main.py --ws`，父进程 = lawclaw.exe 12356）→ �
 - **注意**：GUI 上传流程的"AI可读"徽章需真实文件对话框（IAB 无法驱动），人工验证即可； HANDLE：chat 注入块修复过 `params` 未定义 bug（handle_chat 参数已解构，新参数须入签名）
 
 ### Done (Semantica 借鉴 — 双时间线期限 + 决策记录, Sep 11)
-- **参考仓库**：`D:\databi\semantica`（"开源版 Palantir"，知识图谱+决策智能+溯源，MIT，18 万行）。评估结论：**概念捐助者而非依赖**（中文 NLP 为零、核心依赖含 torch/opencv）；抄设计不引包
+- **参考仓库**：`<本地参考仓库>\semantica`（"开源版 Palantir"，知识图谱+决策智能+溯源，MIT，18 万行）。评估结论：**概念捐助者而非依赖**（中文 NLP 为零、核心依赖含 torch/opencv）；抄设计不引包
 - **双时间线期限模型（schemaVersion 3→4，借鉴 BiTemporalFact）**：
   - `DeadlineItem` 新增 `validFrom`（版本生效）/`supersededAt`（被取代时间，null=现行）/`history[]`（DeadlineRevision：完整旧版本+有效期窗口+changeReason）
   - 迁移**自愈式**（按字段缺失判断，与版本号解耦——种子/旧数据直接标 v4 也能补齐）
@@ -252,7 +252,7 @@ untime\Scripts\python.exe main.py --ws`，父进程 = lawclaw.exe 12356）→ �
 - **环境备注**：长跑的 vite dev 会话多次 HMR 后 transform 缓存可能滞后/卡死（served 代码与磁盘不一致）——重启 `pnpm dev` 解决
 
 ### Done (AG-UI 官方协议对齐 + LiveKit 架构借鉴, Sep 11)
-- **参考仓库**：`D:\Down\ag-ui-main`（AG-UI 官方 monorepo，规范源 `sdks/typescript/packages/core/src/events.ts`）+ `D:\Down\livekit-master`（LiveKit Server Go SFU）
+- **参考仓库**：`<本地参考仓库>\ag-ui-main`（AG-UI 官方 monorepo，规范源 `sdks/typescript/packages/core/src/events.ts`）+ `<本地参考仓库>\livekit-master`（LiveKit Server Go SFU）
 - **协议对齐（合规测试 7/7：`backend/tests/test_agui_protocol.py`）**：
   - EventEmitter 每事件自动注入官方 `timestamp`(ms epoch)
   - `RUN_STARTED` 补官方必填 `threadId`（= 会话 ID，前端 chat RPC 传 `thread_id`，三处 emitter 构造点贯通）
@@ -270,7 +270,7 @@ untime\Scripts\python.exe main.py --ws`，父进程 = lawclaw.exe 12356）→ �
 
 ### Done (UI 深度打磨 — 第二轮走查, Sep 11)
 - **紧急期限标签分级**：Dashboard 右侧标签从清一色"紧急"改为三级 `deadlineStatusLabel()`——已逾期(danger)/今天到期(danger)/紧急≤7天(warning)/临近(info)；逾期行加深红底纹（`.deadline-overdue`），`urgency` 类型扩为 'overdue'|'critical'|'warning'
-- **演示案件期限全量修复**：matter.ts 内部数组中天行/赵某/孙某/恒大的 deadline 从过去日期改为未来（t(-30)/t(-20)/t(-25)/t(-30)），案件卡警告不再满屏"逾期 N 天"，只剩刻意保留的测试案件+周某紧急项
+- **演示案件期限全量修复**：matter.ts 内部数组中天行/赵某/孙某/宏远的 deadline 从过去日期改为未来（t(-30)/t(-20)/t(-25)/t(-30)），案件卡警告不再满屏"逾期 N 天"，只剩刻意保留的测试案件+周某紧急项
 - **日程种子时区 bug**：`schedule.ts` base 从"今天08:00"改为"今天00:00"——原实现 h 参数语义混乱（08:00+16.5h=次日凌晨00:30 出现"凌晨开会"）
 - **日程类型徽章统一**：CalendarPage 截止期限也显示徽章；开庭类型用红描边徽章 `.cp-court-tag`（两处列表模板同步）
 - **开发工具隐藏**：页脚"恢复演示数据/通知测试"包在 `import.meta.env.DEV` 内，生产构建不显示
@@ -298,7 +298,7 @@ untime\Scripts\python.exe main.py --ws`，父进程 = lawclaw.exe 12356）→ �
 - **Installers generated** (release build):
   - MSI: `target/release/bundle/msi/LawClaw_0.1.0_x64_en-US.msi`
   - NSIS: `target/release/bundle/nsis/LawClaw_0.1.0_x64-setup.exe`
-- **Project copied** to `D:\LawClaw` (avoids parentheses in path `D:\Down\hermes-agent-main (5)...` that broke MinGW `as` assembler and LLD path parsing)
+- **Project moved to a path without parentheses**（原路径形如 `...\hermes-agent-main (5)...`，括号会破坏 MinGW `as` 汇编器与 LLD 的路径解析）
 - **Junction created**: `C:\hermes-lawclaw\src` → original path (preserved for reference)
 - **MSYS2 packages added**: `mingw-w64-x86_64-gcc` (for `gcc.exe` needed by `windres`), `mingw-w64-x86_64-lld` (tried as alternate linker, ruled out due to PE ordinal limit)
 - **Build dependencies**: PATH must include `C:\msys64\mingw64\bin` for `windres.exe` + `gcc.exe`
@@ -355,9 +355,9 @@ untime\Scripts\python.exe main.py --ws`，父进程 = lawclaw.exe 12356）→ �
 - `LawClaw/src/`: Vue 3 + Element Plus frontend (types, stores, components, lib)
 - `LawClaw/src-tauri/`: Tauri desktop shell (window 1280x800, sidecar, shell plugin)
 - **Skill packs** (local copies):
-  - `D:\Down\toolkits_legal-skillpack-litigation-legal/` — 19 skills (installed)
-  - `D:\Down\toolkits_legal-skillpack-legal-research-cn/` — 4 skills (installed)
-  - `D:\Down\toolkits_legal-skillpack-corporate-legal/` — 13 skills (installed)
-  - `D:\Down\toolkits_legal-skillpack-commercial-legal/` — 12 skills (installed)
-  - `D:\Down\toolkits_legal-skillpack-ip-legal/` — 12 skills (not installed)
-  - `D:\Down\toolkits_legal-skillpack-ai-governance-legal/` — 9 skills (not installed)
+  - `<本地参考仓库>\toolkits_legal-skillpack-litigation-legal/` — 19 skills (installed)
+  - `<本地参考仓库>\toolkits_legal-skillpack-legal-research-cn/` — 4 skills (installed)
+  - `<本地参考仓库>\toolkits_legal-skillpack-corporate-legal/` — 13 skills (installed)
+  - `<本地参考仓库>\toolkits_legal-skillpack-commercial-legal/` — 12 skills (installed)
+  - `<本地参考仓库>\toolkits_legal-skillpack-ip-legal/` — 12 skills (not installed)
+  - `<本地参考仓库>\toolkits_legal-skillpack-ai-governance-legal/` — 9 skills (not installed)

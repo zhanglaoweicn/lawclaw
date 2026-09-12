@@ -26,7 +26,7 @@ def make_complex_pdf() -> str:
     y += 30
     page.insert_text((72, y), "（2026）京0108民初21037号", fontname="china-s", fontsize=11)
     y += 26
-    page.insert_text((72, y), "原告：吴建华等32户业主。  被告：恒大地产集团北京有限公司。",
+    page.insert_text((72, y), "原告：吴建华等32户业主。  被告：宏远地产集团北京有限公司。",
                      fontname="china-s", fontsize=11)
     y += 30
 
@@ -96,7 +96,7 @@ def parse_with_mineru() -> str:
 def score(name: str, text: str) -> dict:
     keys = ["219,000", "2,400,000", "158,700", "2,777,700", "29,222",
             "逾期交房违约金", "购房款返还", "利息损失", "日万分之五", "LPR",
-            "本院认为", "恒大地产集团北京有限公司", "（2026）京0108民初21037号"]
+            "本院认为", "宏远地产集团北京有限公司", "（2026）京0108民初21037号"]
     hits = [k for k in keys if k in text]
     has_table = ("|" in text) or ("表格" in text)
     return {

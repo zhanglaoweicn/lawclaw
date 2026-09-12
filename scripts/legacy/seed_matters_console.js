@@ -62,15 +62,15 @@ function seedMatters() {
   })
 
   // ════════════════════════════════════════════
-  // 4. 天行科技诉蓝光公司专利侵权纠纷（知识产权）
+  // 4. 天行科技诉蓝海公司专利侵权纠纷（知识产权）
   // ════════════════════════════════════════════
   matters.push({
-    id: genId(), title: '天行科技公司诉蓝光科技公司发明专利侵权纠纷',
+    id: genId(), title: '天行科技公司诉蓝海科技公司发明专利侵权纠纷',
     caseNumber: '(2026)最高法知民终189号', client: '天行科技股份有限公司',
-    counterparty: '蓝光科技（深圳）有限公司', practiceArea: '知识产权',
+    counterparty: '蓝海科技（深圳）有限公司', practiceArea: '知识产权',
     stage: '诉讼中', deadline: t(60).toISOString(),
     courtName: '最高人民法院知识产权法庭', courtDate: t(20).toISOString(),
-    description: '天行科技系名称为"基于人工智能的图像识别方法与系统"（专利号：ZL202310xxxxxx.x）的发明专利权人。天行科技发现蓝光公司制造销售的"蓝光AI视觉检测系统"落入其专利权利要求保护范围。一审法院判决构成侵权，赔偿300万元。蓝光公司不服一审判决，向最高人民法院提起上诉。本案为二审阶段。',
+    description: '天行科技系名称为"基于人工智能的图像识别方法与系统"（专利号：ZL202310xxxxxx.x）的发明专利权人。天行科技发现蓝海公司制造销售的"蓝海AI视觉检测系统"落入其专利权利要求保护范围。一审法院判决构成侵权，赔偿300万元。蓝海公司不服一审判决，向最高人民法院提起上诉。本案为二审阶段。',
     caseType: 'civil', opposingCounsel: '陈思远 律师',
     createdAt: t(365), updatedAt: new Date(),
     customCategories: ['专利文件', '侵权证据', '法律文书', '技术文档', '对方提交'],
@@ -82,11 +82,11 @@ function seedMatters() {
   matters.push({
     id: genId(), title: '赵某诉钱某交通事故人身损害赔偿纠纷',
     caseNumber: '(2026)京0115民初3692号', client: '赵晓东（受害方）',
-    counterparty: '钱大军、平安财险北京分公司', practiceArea: '交通事故',
+    counterparty: '钱大军、长兴财险北京分公司', practiceArea: '交通事故',
     stage: '调解中', deadline: t(35).toISOString(),
     courtName: '北京市大兴区人民法院', courtDate: t(-5).toISOString(),
-    description: '2025年12月15日，钱大军驾驶小客车将骑电动车的赵晓东撞伤。经交警认定钱大军负全部责任。赵晓东诊断为左胫腓骨开放性骨折、脑震荡，住院32天，花费医疗费8.6万元，构成十级伤残。肇事车辆投保于平安财险。起诉要求赔偿医疗费、误工费、伤残赔偿金等共计38.6万元。目前法院正在组织调解。',
-    caseType: 'civil', opposingCounsel: '刘文杰 律师（平安财险）',
+    description: '2025年12月15日，钱大军驾驶小客车将骑电动车的赵晓东撞伤。经交警认定钱大军负全部责任。赵晓东诊断为左胫腓骨开放性骨折、脑震荡，住院32天，花费医疗费8.6万元，构成十级伤残。肇事车辆投保于长兴财险。起诉要求赔偿医疗费、误工费、伤残赔偿金等共计38.6万元。目前法院正在组织调解。',
+    caseType: 'civil', opposingCounsel: '刘文杰 律师（长兴财险）',
     createdAt: t(90), updatedAt: new Date(),
     customCategories: ['案件文书', '医疗证据', '事故证据', '保险材料', '赔偿清单'],
   })
@@ -110,13 +110,13 @@ function seedMatters() {
   // 7. 房屋买卖合同纠纷（集体诉讼）
   // ════════════════════════════════════════════
   matters.push({
-    id: genId(), title: '吴某等32户业主诉恒大地产房屋买卖合同纠纷（集体诉讼）',
+    id: genId(), title: '吴某等32户业主诉宏远地产房屋买卖合同纠纷（集体诉讼）',
     caseNumber: '(2026)京0108民初21037号', client: '吴建华等32户业主',
-    counterparty: '恒大地产集团北京有限公司', practiceArea: '房产纠纷',
+    counterparty: '宏远地产集团北京有限公司', practiceArea: '房产纠纷',
     stage: '证据收集', deadline: t(40).toISOString(),
     courtName: '北京市海淀区人民法院',
-    description: '32户业主购买海淀区"恒大华府"项目，合同约定2024年12月31日前交房。截至2026年项目停工超18个月。开发商以资金链断裂为由多次延期。业主集体委托维权，拟诉请继续履行合同并支付逾期交房违约金，或解除合同返还购房款及利息。目前正在收集证据，准备诉前财产保全。',
-    caseType: 'civil', opposingCounsel: '恒大法务团队',
+    description: '32户业主购买海淀区"宏远华府"项目，合同约定2024年12月31日前交房。截至2026年项目停工超18个月。开发商以资金链断裂为由多次延期。业主集体委托维权，拟诉请继续履行合同并支付逾期交房违约金，或解除合同返还购房款及利息。目前正在收集证据，准备诉前财产保全。',
+    caseType: 'civil', opposingCounsel: '宏远法务团队',
     createdAt: t(30), updatedAt: new Date(),
     customCategories: ['购房合同', '付款证据', '沟通记录', '法律文书', '集体诉讼'],
   })

@@ -334,7 +334,7 @@ export function normalizePartyName(name: string): string {
 
 /**
  * 名称匹配判定：完全匹配 或 包含关系（一方是另一方的前缀/子串）
- * 例如 "恒大地产" 匹配 "恒大地产集团北京有限公司"
+ * 例如 "宏远地产" 匹配 "宏远地产集团北京有限公司"
  */
 export function isPartyMatch(a: string, b: string): boolean {
   const na = normalizePartyName(a)

@@ -174,27 +174,27 @@ export function seedAllDemoCases(
   ])
 
   // ════════════════════════════════════════════
-  // 4. 天行科技诉蓝光公司专利侵权纠纷（知识产权案）
+  // 4. 天行科技诉蓝海公司专利侵权纠纷（知识产权案）
   // ════════════════════════════════════════════
   const m4 = addMatter({
-    title: '天行科技公司诉蓝光科技公司发明专利侵权纠纷',
+    title: '天行科技公司诉蓝海科技公司发明专利侵权纠纷',
     caseNumber: '(2026)最高法知民终189号', client: '天行科技股份有限公司',
-    counterparty: '蓝光科技（深圳）有限公司', practiceArea: '知识产权',
+    counterparty: '蓝海科技（深圳）有限公司', practiceArea: '知识产权',
     stage: '诉讼中', deadline: t(60).toISOString(),
     courtName: '最高人民法院知识产权法庭', courtDate: t(-7).toISOString(),
-    description: '天行科技系名称为"基于人工智能的图像识别方法与系统"（专利号：ZL202310xxxxxx.x）的发明专利权人。该专利于2023年获得授权，涉及AI图像识别核心技术。天行科技发现蓝光公司制造销售的"蓝光AI视觉检测系统"落入其专利权利要求保护范围，未经许可实施其专利技术。天行科技诉请：1）停止侵权；2）赔偿经济损失及合理开支共计500万元；3）销毁侵权产品和专用模具。一审法院判决构成侵权，赔偿300万元。蓝光公司不服一审判决，向最高人民法院提起上诉。本案为二审阶段。',
+    description: '天行科技系名称为"基于人工智能的图像识别方法与系统"（专利号：ZL202310xxxxxx.x）的发明专利权人。该专利于2023年获得授权，涉及AI图像识别核心技术。天行科技发现蓝海公司制造销售的"蓝海AI视觉检测系统"落入其专利权利要求保护范围，未经许可实施其专利技术。天行科技诉请：1）停止侵权；2）赔偿经济损失及合理开支共计500万元；3）销毁侵权产品和专用模具。一审法院判决构成侵权，赔偿300万元。蓝海公司不服一审判决，向最高人民法院提起上诉。本案为二审阶段。',
     caseType: 'civil', opposingCounsel: '陈思远 律师', da: 365,
     categories: ['专利文件', '侵权证据', '法律文书', '技术文档', '对方提交'],
   })
   addTimeline(m4, [
-    { type: 'milestone', title: '天行科技发现侵权线索', desc: '市场部门在展会上发现蓝光公司疑似侵权产品', da: 420 },
-    { type: 'note', title: '购买侵权产品取证', desc: '公证购买蓝光AI视觉检测系统一套', da: 410 },
+    { type: 'milestone', title: '天行科技发现侵权线索', desc: '市场部门在展会上发现蓝海公司疑似侵权产品', da: 420 },
+    { type: 'note', title: '购买侵权产品取证', desc: '公证购买蓝海AI视觉检测系统一套', da: 410 },
     { type: 'file_upload', title: '侵权产品技术分析', desc: '委托第三方机构反向分析侵权产品技术方案', da: 400 },
-    { type: 'milestone', title: '专利侵权比对报告完成', desc: '确认蓝光产品落入权利要求1-5保护范围', da: 390 },
+    { type: 'milestone', title: '专利侵权比对报告完成', desc: '确认蓝海产品落入权利要求1-5保护范围', da: 390 },
     { type: 'stage_change', title: '阶段变更: 待处理 → 审查中', desc: '开始评估诉讼可行性和赔偿预期', da: 385 },
     { type: 'milestone', title: '签订委托代理合同', desc: '天行科技委托我所全权代理诉讼', da: 375 },
-    { type: 'note', title: '发送侵权警告函', desc: '要求蓝光公司停止侵权并协商赔偿', da: 370 },
-    { type: 'note', title: '蓝光公司回函否认侵权', desc: '主张自有技术和专利不同，拒绝协商', da: 360 },
+    { type: 'note', title: '发送侵权警告函', desc: '要求蓝海公司停止侵权并协商赔偿', da: 370 },
+    { type: 'note', title: '蓝海公司回函否认侵权', desc: '主张自有技术和专利不同，拒绝协商', da: 360 },
     { type: 'stage_change', title: '阶段变更: 审查中 → 诉讼中', desc: '向广州知识产权法院提起诉讼', da: 355 },
     { type: 'milestone', title: '案件受理', desc: '广州知识产权法院正式立案', da: 350 },
     { type: 'milestone', title: '证据交换', desc: '双方交换技术文档和侵权对比证据', da: 300 },
@@ -202,8 +202,8 @@ export function seedAllDemoCases(
     { type: 'note', title: '技术鉴定申请', desc: '申请法院委托鉴定机构就技术方案是否等同进行鉴定', da: 260 },
     { type: 'milestone', title: '鉴定报告出具', desc: '鉴定结论：两者技术手段、功能、效果实质相同', da: 220 },
     { type: 'court_date', title: '一审第二次开庭', desc: '围绕鉴定报告进行质证', da: 200 },
-    { type: 'milestone', title: '一审宣判', desc: '判决蓝光公司停止侵权，赔偿天行科技300万元', da: 150 },
-    { type: 'note', title: '蓝光公司提起上诉', desc: '蓝光公司不服一审判决，向最高院知识产权法庭上诉', da: 135 },
+    { type: 'milestone', title: '一审宣判', desc: '判决蓝海公司停止侵权，赔偿天行科技300万元', da: 150 },
+    { type: 'note', title: '蓝海公司提起上诉', desc: '蓝海公司不服一审判决，向最高院知识产权法庭上诉', da: 135 },
     { type: 'stage_change', title: '阶段变更: 诉讼中 → 诉讼中（二审）', desc: '转入最高院二审程序', da: 130 },
     { type: 'file_upload', title: '二审答辩状提交', desc: '针对上诉理由逐一反驳', da: 120 },
     { type: 'note', title: '二审庭前会议', desc: '最高院组织远程视频庭前会议', da: 60 },
@@ -225,11 +225,11 @@ export function seedAllDemoCases(
   const m5 = addMatter({
     title: '赵某诉钱某交通事故人身损害赔偿纠纷',
     caseNumber: '(2026)京0115民初3692号', client: '赵晓东（受害方）',
-    counterparty: '钱大军、平安财险北京分公司', practiceArea: '交通事故',
+    counterparty: '钱大军、长兴财险北京分公司', practiceArea: '交通事故',
     stage: '调解中', deadline: t(-12).toISOString(),
     courtName: '北京市大兴区人民法院', courtDate: t(-5).toISOString(),
-    description: '2025年12月15日，钱大军驾驶京Axxxxx号小客车在大兴区黄亦路将骑电动车的赵晓东撞伤。经交警认定，钱大军未保持安全车距负全部责任。赵晓东被送往大兴区人民医院治疗，诊断为：左胫腓骨开放性骨折、脑震荡、多处软组织挫伤，住院32天，花费医疗费8.6万元。经司法鉴定构成十级伤残。肇事车辆投保于平安财险北京分公司。因协商赔偿未果，现起诉要求赔偿医疗费、误工费、护理费、伤残赔偿金、精神损害抚慰金等共计38.6万元。目前法院正在组织调解。',
-    caseType: 'civil', opposingCounsel: '刘文杰 律师（平安财险）', da: 90,
+    description: '2025年12月15日，钱大军驾驶京Axxxxx号小客车在大兴区黄亦路将骑电动车的赵晓东撞伤。经交警认定，钱大军未保持安全车距负全部责任。赵晓东被送往大兴区人民医院治疗，诊断为：左胫腓骨开放性骨折、脑震荡、多处软组织挫伤，住院32天，花费医疗费8.6万元。经司法鉴定构成十级伤残。肇事车辆投保于长兴财险北京分公司。因协商赔偿未果，现起诉要求赔偿医疗费、误工费、护理费、伤残赔偿金、精神损害抚慰金等共计38.6万元。目前法院正在组织调解。',
+    caseType: 'civil', opposingCounsel: '刘文杰 律师（长兴财险）', da: 90,
     categories: ['案件文书', '医疗证据', '事故证据', '保险材料', '赔偿清单'],
   })
   addTimeline(m5, [
@@ -238,15 +238,15 @@ export function seedAllDemoCases(
     { type: 'milestone', title: '当事人到所咨询', desc: '赵晓东家属到所咨询赔偿事宜', da: 180 },
     { type: 'stage_change', title: '阶段变更: 待处理 → 审查中', desc: '收集事故认定书、病历等材料', da: 175 },
     { type: 'milestone', title: '签订委托代理合同', desc: '风险代理，约定回款后收费', da: 170 },
-    { type: 'note', title: '调取肇事车辆保险信息', desc: '确认平安财险为承保公司', da: 165 },
+    { type: 'note', title: '调取肇事车辆保险信息', desc: '确认长兴财险为承保公司', da: 165 },
     { type: 'file_upload', title: '医疗病历收集', desc: '收集住院病历、诊断证明、费用清单', da: 160 },
     { type: 'file_upload', title: '申请伤残鉴定', desc: '委托法大法庭科学技术鉴定所鉴定', da: 150 },
     { type: 'milestone', title: '鉴定结论出具', desc: '十级伤残，误工期120天，护理期60天', da: 130 },
     { type: 'stage_change', title: '阶段变更: 审查中 → 诉讼中', desc: '向大兴法院提起诉讼', da: 120 },
     { type: 'milestone', title: '法院立案', desc: '案号 (2026)京0115民初3692号', da: 115 },
-    { type: 'note', title: '与保险公司初步沟通', desc: '平安财险认可责任，但对赔偿金额分歧较大', da: 80 },
+    { type: 'note', title: '与保险公司初步沟通', desc: '长兴财险认可责任，但对赔偿金额分歧较大', da: 80 },
     { type: 'court_date', title: '开庭审理', desc: '三方到庭，法庭辩论后建议调解', da: 45 },
-    { type: 'note', title: '赔偿方案协商', desc: '平安财险报价24万元，我方要求35万元', da: 40 },
+    { type: 'note', title: '赔偿方案协商', desc: '长兴财险报价24万元，我方要求35万元', da: 40 },
     { type: 'stage_change', title: '阶段变更: 诉讼中 → 调解中', desc: '双方均同意在法庭主持下调解', da: 35 },
     { type: 'note', title: '提交调解方案', desc: '让步至30万元，含精神损害抚慰金2万元', da: 20 },
     { type: 'milestone', title: '调解有望', desc: '保险公司内部审批28万元方案，预计本周答复', da: 5 },
@@ -300,16 +300,16 @@ export function seedAllDemoCases(
   ])
 
   // ════════════════════════════════════════════
-  // 7. 吴某诉恒大公司房屋买卖合同纠纷
+  // 7. 吴某诉宏远公司房屋买卖合同纠纷
   // ════════════════════════════════════════════
   const m7 = addMatter({
-    title: '吴某等32户业主诉恒大地产房屋买卖合同纠纷（集体诉讼）',
+    title: '吴某等32户业主诉宏远地产房屋买卖合同纠纷（集体诉讼）',
     caseNumber: '(2026)京0108民初21037号', client: '吴建华等32户业主',
-    counterparty: '恒大地产集团北京有限公司', practiceArea: '房产纠纷',
+    counterparty: '宏远地产集团北京有限公司', practiceArea: '房产纠纷',
     stage: '证据收集', deadline: t(-14).toISOString(),
     courtName: '北京市海淀区人民法院', courtDate: undefined,
-    description: '2022年，吴建华等32户业主分别与恒大地产签订《商品房预售合同》，购买海淀区"恒大华府"项目住房。合同约定2024年12月31日前交房。截至2026年，项目已停工超过18个月，仅完成主体结构封顶，装修、绿化、配套设施均未完成。开发商以资金链断裂为由多次延期。业主集体委托我所维权，拟诉请：1）要求开发商继续履行合同，限期交房并支付逾期交房违约金（按日万分之五）；2）或解除合同，返还已付购房款及利息并赔偿损失。目前正在收集证据，进行诉前财产保全。',
-    caseType: 'civil', opposingCounsel: '恒大法务团队', da: 30,
+    description: '2022年，吴建华等32户业主分别与宏远地产签订《商品房预售合同》，购买海淀区"宏远华府"项目住房。合同约定2024年12月31日前交房。截至2026年，项目已停工超过18个月，仅完成主体结构封顶，装修、绿化、配套设施均未完成。开发商以资金链断裂为由多次延期。业主集体委托我所维权，拟诉请：1）要求开发商继续履行合同，限期交房并支付逾期交房违约金（按日万分之五）；2）或解除合同，返还已付购房款及利息并赔偿损失。目前正在收集证据，进行诉前财产保全。',
+    caseType: 'civil', opposingCounsel: '宏远法务团队', da: 30,
     categories: ['购房合同', '付款证据', '沟通记录', '法律文书', '集体诉讼'],
   })
   addTimeline(m7, [
@@ -322,11 +322,11 @@ export function seedAllDemoCases(
     { type: 'note', title: '向住建委投诉', desc: '请求政府督促开发商复工', da: 35 },
     { type: 'milestone', title: '住建委回复', desc: '确认该项目监管账户资金已被挪用', da: 28 },
     { type: 'stage_change', title: '阶段变更: 审查中 → 证据收集', desc: '决定起诉并申请财产保全', da: 25 },
-    { type: 'note', title: '调查恒大其他资产线索', desc: '查找恒大在京其他可执行财产', da: 20 },
-    { type: 'note', title: '撰写诉前保全申请', desc: '申请查封恒大在京其他项目未售房产', da: 15 },
+    { type: 'note', title: '调查宏远其他资产线索', desc: '查找宏远在京其他可执行财产', da: 20 },
+    { type: 'note', title: '撰写诉前保全申请', desc: '申请查封宏远在京其他项目未售房产', da: 15 },
     { type: 'file_upload', title: '保全证据公证', desc: '对项目停工现状进行证据保全公证', da: 12 },
     { type: 'note', title: '推选诉讼代表人', desc: '32户业主推选吴建华等3人为诉讼代表人', da: 8 },
-    { type: 'deadline', title: '计划本周提交起诉状及保全申请', desc: '争取在恒大转移资产前完成保全', da: 2 },
+    { type: 'deadline', title: '计划本周提交起诉状及保全申请', desc: '争取在宏远转移资产前完成保全', da: 2 },
   ])
   addFiles(m7, [
     ['民事起诉状.docx','法律文书'], ['财产保全申请书.docx','法律文书'],

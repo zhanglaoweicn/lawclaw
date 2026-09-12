@@ -273,6 +273,12 @@ def step_tauri():
         '  "app": { "windows": [ { "title": '
         f'"{WINDOW_TITLE}"'
         " } ] },\n"
+        # 前端只由 step [3] 构建一次：这里把 tauri 自带的 beforeBuildCommand 关掉。
+        # 若留着 "pnpm build"，打包阶段会**第二次**重建 dist（vite 会先清空 outDir 再写入）——
+        # 期间 mtime 变化触发 tauri-build 重新编译，于是「编译断言过的 exe」与「真正打进
+        # 安装器/exe」可能不是同一份；更糟的是若编译恰好读到刚被清空的 dist，会静默产出
+        # 不含前端的空壳 exe（装完只有一个网络错误页）。
+        '  "build": { "beforeBuildCommand": "", "frontendDist": "../dist" },\n'
         f'  "bundle": {{ "targets": "{BUNDLES}", "resources": {{ "{rel_payload}": "./" }} }}\n'
         "}\n",
         encoding="utf-8",
@@ -303,17 +309,79 @@ def step_tauri():
     # 打包完成后再往 payload 里拷文件，就永远进不了安装包（曾导致安装版缺 WebView2Loader.dll、
     # 装完启动报「找不到 WebView2Loader.dll」）。所以先 cargo build 产出 exe 与 DLL，
     # 归档进 payload，再让 tauri build 只做打包（此时 cargo 已是最新，不会重复编译）。
-    print("    预编译（产出 exe 与 WebView2Loader.dll，供打包前归档）…")
-    subprocess.run(["cargo", "build", "--release"], cwd=ROOT / "src-tauri",
-                   check=True, shell=True, env=env)
-    _archive_runtime_bits()
+    tauri_cmd = ["pnpm", "tauri", "build", "--config",
+                 str(overlay.relative_to(ROOT)).replace("\\", "/")]
 
-    subprocess.run(
-        ["pnpm", "tauri", "build", "--config", str(overlay.relative_to(ROOT)).replace("\\", "/")],
-        cwd=ROOT, check=True, shell=True, env=env,
-    )
-    # 打包后再核对一次（bundle 之后 cargo 不会再改产物，这里只是保险与日志）
+    # 预编译必须走 tauri CLI（--no-bundle 只编译不打包）：生产构建的 feature/env 由 CLI 提供。
+    # 直接用 `cargo build --release` 会得到一个**开发态** exe——不内嵌前端、转而去找 devUrl
+    # （http://localhost:1420），装到客户机就是「无法访问此页面 / localhost 拒绝连接」。
+    # 两次调用都带同一份 --config，配置一致 → 打包那次不会触发重新编译。
+    print("    预编译（tauri CLI --no-bundle，产出 exe 与 WebView2Loader.dll，供打包前归档）…")
+    subprocess.run(tauri_cmd + ["--no-bundle"], cwd=ROOT, check=True, shell=True, env=env)
+
+    # 闸门一：exe 必须内嵌前端。空壳 exe 能起进程、也能拉起后端，唯独 WebView 里是
+    # 一个网络错误页——这种失败用「进程活着 + 9876 在听」完全查不出来，必须在这里拦。
+    dist_names = _dist_assets()
+    _assert_frontend_embedded(_target_exe(), dist_names)
+
+    _archive_runtime_bits()
+    archived_hash = _sha256(PAYLOAD / "LawClaw.exe")
+
+    subprocess.run(tauri_cmd, cwd=ROOT, check=True, shell=True, env=env)
+    # 打包阶段会再编译一次（CLI 在打包模式下换了构建 env，cargo 判定需要重编），
+    # 且打包后还会把 exe patch 进 bundle 类型信息——所以这里重新归档，并**对真正打进
+    # 安装器的那份 exe 再断言一次**（安装目录里的 LawClaw.exe 可能来自 resources 里的这份，
+    # 也可能来自 bundler 自己拷的那份，两者都必须含前端）。
+    # 安装器的 resources 是在**打包那一刻**从 payload 快照的：归档必须发生在这个窗口之前，
+    # 或在其后覆盖同一路径——这里两者都做了（打包前归档 + 打包后覆盖）。
     _archive_runtime_bits(quiet=True)
+    final_hash = _sha256(PAYLOAD / "LawClaw.exe")
+    if final_hash != archived_hash:
+        print(f"    · 打包期间 exe 被重新编译（{archived_hash[:12]} → {final_hash[:12]}），"
+              "已按打包后的版本重新归档；两份都已断言含前端")
+    _assert_frontend_embedded(PAYLOAD / "LawClaw.exe", dist_names, label="payload/LawClaw.exe（打包后）")
+
+
+def _target_exe() -> Path:
+    return ROOT / "src-tauri" / "target" / "release" / "lawclaw.exe"
+
+
+def _sha256(path: Path) -> str:
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _dist_assets() -> list:
+    """dist 的入口资源名（vite 内容哈希命名）。空 = 前端压根没构建。"""
+    assets = ROOT / "dist" / "assets"
+    names = sorted(p.name for p in assets.glob("*") if p.suffix in (".js", ".css")) if assets.is_dir() else []
+    if not (ROOT / "dist" / "index.html").is_file() or not names:
+        raise SystemExit("✗ dist 为空或缺入口资源——前端未构建，产物装出来会是一个空白页")
+    return names
+
+
+def _assert_frontend_embedded(exe: Path, dist_names: list, label: str = "exe") -> None:
+    """硬闸：exe 必须内嵌前端资源。
+
+    Tauri 在**编译期**读取 frontendDist 目录、把前端写进二进制。若读的那一刻 dist 是空的
+    （例如另一个构建正在重建 dist：vite 会先清空 outDir 再写入），会静默产出一个「空壳 exe」：
+    进程起得来、后端也拉得起来，但 WebView 里只有一个网络错误页（ERR_CONNECTION_REFUSED）。
+    这种失败在「进程活着 + 9876 在听」这类检查下毫无痕迹，所以必须在构建期拦住。
+    """
+    if not exe.is_file():
+        raise SystemExit(f"✗ 找不到 {exe}（{label}）")
+    blob = exe.read_bytes()
+    missing = [n for n in dist_names if n.encode("ascii") not in blob]
+    if missing:
+        raise SystemExit(
+            f"✗ {label} 未内嵌前端资源（缺 {missing}）——装出来必然是一个空白错误页，构建终止。\n"
+            "  成因通常是编译时 dist 为空或被并发改写（同一仓库同时跑另一个构建/另一个风味）。"
+        )
+    print(f"    ✓ {label} 已内嵌前端（{len(dist_names)} 个入口资源，sha256 {_sha256(exe)[:12]}）")
 
 
 def _archive_runtime_bits(quiet: bool = False) -> None:
@@ -396,7 +464,10 @@ def step_portable():
     else:
         print("    ! 未找到 lawclaw.exe，请先跑一次不带 --skip-tauri 的构建")
     for dll in ("WebView2Loader.dll",):
-        src = ROOT / "src-tauri" / "target" / "release" / dll
+        # 优先取 payload 里归档的那份：安装器就是照它快照的，便携目录要与之同一字节
+        src = PAYLOAD / dll
+        if not src.exists():
+            src = ROOT / "src-tauri" / "target" / "release" / dll
         if src.exists():
             shutil.copy2(src, dst / dll)
     print(f"    ✓ {dst.relative_to(ROOT)}（{_dir_size_mb(dst):.0f} MB）——整目录拷走即可运行")
@@ -536,6 +607,9 @@ def audit_payload():
         print(f"    ✗ 缺少运行时依赖：{missing} —— 安装后应用将无法启动")
     else:
         print("    ✓ 运行时依赖在位（LawClaw.exe + WebView2Loader.dll）")
+    # 出货前最后一道闸：EXE 里必须真的装着前端（空壳 exe 是「装完只有一个错误页」的根因）
+    if (PAYLOAD / "LawClaw.exe").exists():
+        _assert_frontend_embedded(PAYLOAD / "LawClaw.exe", _dist_assets(), label="payload/LawClaw.exe")
 
 
 def _dir_size_mb(p: Path) -> float:

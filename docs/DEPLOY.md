@@ -180,9 +180,27 @@ src-tauri/target/release/bundle/nsis/LawClaw_0.1.0_x64-setup.exe   # NSIS 安装
    Tauri 的 NSIS 打包不会自动带上它；便携版当时正常是因为打包时手动拷了）；
 5. 组装便携目录（`--portable`）；
 6. **发布物自检**：拦截 `.hermes/{sessions,memories,logs,state.db}` 等运行时数据与任何密钥，
-   并检查**运行时依赖在位**（`LawClaw.exe` + `WebView2Loader.dll` 必须都在 payload 根）；
+   并检查**运行时依赖在位**（`LawClaw.exe` + `WebView2Loader.dll` 必须都在 payload 根），
+   再断言 exe **确实内嵌了前端资源**（见下条）；
 7. **包内后端冒烟**：用捆绑运行时真实启动一次后端并打 RPC（`ping`/技能数/MCP 数/值守扫描）——
    这一步专门拦"漏带模块"这类静态检查抓不到的问题。
+
+### 两道硬闸：前端必须真的在 exe 里
+
+Tauri 是在**编译期**读取 `frontendDist` 目录、把前端写进二进制的。如果读的那一刻 `dist/` 是空的
+（典型成因：另一个构建正在重建 dist——vite 会先清空 `outDir` 再写入），就会**静默**产出一个
+「空壳 exe」：进程起得来、后端也拉得起来，但 WebView 里只有一个 `ERR_CONNECTION_REFUSED`
+错误页。这种失败用「进程活着 + 9876 在听」查不出来，所以脚本在两处硬断言：
+
+- `_assert_frontend_embedded()`：编译完立即核对 exe 里是否含 `dist/assets/` 的入口资源名
+  （构建期闸门），`audit_payload()` 出货前再核对一次 payload 里的 exe；
+- 打包前后 **exe sha256 必须一致**：不一致说明打包阶段又被编译了一次，
+  那样安装器里装的就不是构建期断言过的那份 exe（`build_release.py` 里把 tauri 的
+  `beforeBuildCommand` 置空，就是为了让前端只构建一次、避免这种二次编译）。
+
+安装侧的验收脚本（`local-overlay/verify_install.ps1`）据此再验三件事：安装后的 exe 与
+payload 里的 exe **逐字节一致**、应用能起、**应用自己的 webview 连上了它拉起的后端**
+（只有前端真的加载并运行了才会连——空壳 exe 永远不会连）。
 
 ---
 

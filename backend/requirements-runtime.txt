@@ -1,0 +1,21 @@
+# LawClaw 后端捆绑运行时清单（backend/runtime）
+# Python: 3.14（uv venv --python 3.14）
+# 重建：uv venv runtime --python 3.14 && uv pip install --python runtime/Scripts/python.exe -r backend/requirements-runtime.txt
+# 上游 Hermes 的完整依赖见根 pyproject.toml（重依赖未随行，按需增补）
+
+openai==2.44.0
+websockets==16.0
+pyyaml==6.0.3
+mcp==1.28.1
+pymupdf==1.28.2
+pymupdf4llm==1.28.2
+jieba==0.42.1
+python-docx==1.2.0
+openpyxl==3.1.5
+pdfminer.six==20251230
+requests==2.34.2
+httpx==0.28.1
+python-dotenv==1.2.2
+concurrent-log-handler==0.9.29
+portalocker==4.3.0
+croniter

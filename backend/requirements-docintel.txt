@@ -1,0 +1,27 @@
+# LawClaw 文档智能层（doc_intel.py）推荐依赖
+# 安装：pip install -r backend/requirements-docintel.txt
+# 说明：全部为可选增强——未安装时 doc_intel 按适配链优雅降级
+#       （PDF 兜底 pdfminer.six 已随 Hermes 主依赖提供）。
+#
+# 升级链：pymupdf4llm（Markdown 最佳）→ pymupdf → pdfminer.six
+pymupdf==1.28.2
+pymupdf4llm==1.28.2
+
+# 中文分词（知识库/经验检索的 BM25 质量；缺失时退化 bigram）
+jieba==0.42.1
+
+# ── 图检索升级位（PoC 结论 2026-09-11，见 AGENTS.md）──
+# lightrag-hku 管线验证：安装 OK(py3.14) + LLM 中文实体抽取 OK(15s) + 图谱构建 OK，
+# 但 1.5.7 向量持久化写坏格式(1368x1)、1.5.4 静默为空——上游 bug 区，暂不采用。
+# 升级时机：上游修复后重跑 backend/tests/poc_lightrag.py 复测。
+# lightrag-hku==1.5.4  # 待上游修复向量持久化
+# ── 未来升级位（评估结论见 AGENTS.md）──
+# pip install raganything        # RAG-Anything 全管线（MinerU 解析 + LightRAG 图检索），重依赖
+# pip install opendataloader-pdf # 需 JDK 11+；提示注入过滤是其独有能力
+#
+# ── MinerU 升级位（PoC 结论 2026-09-11，见 AGENTS.md）──
+# MinerU 解析 PoC：复杂版式判决书 13/13 关键字命中，表格输出规范 HTML——与 pymupdf4llm 等价；
+# 其真正差异化在扫描件/图片型 PDF（本 PoC 未覆盖）。环境成本：需独立 Python <3.14 venv
+# （本机 .venv313 已备）+ 3.2GB 模型（ModelScope 源）+ 首次下载可能僵死需重试。
+# 升级用法：.venv313/Scripts/python.exe backend/tests/poc_mineru.py
+# pip install "mineru[core]"  # 仅在 .venv313 内

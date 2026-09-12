@@ -1,0 +1,644 @@
+[
+  {
+    "case": "A1",
+    "name": "握手 ready 事件",
+    "ok": true,
+    "detail": "model=agnes-2.0-flash ag_ui=0.2"
+  },
+  {
+    "case": "A2",
+    "name": "initialize 无参",
+    "ok": true,
+    "detail": "configured=True provider=agnes model=deepseek-flash"
+  },
+  {
+    "case": "A3",
+    "name": "initialize demo-mode 占位 Key 归一",
+    "ok": true,
+    "detail": "configured=True"
+  },
+  {
+    "case": "A4",
+    "name": "ping",
+    "ok": true,
+    "detail": "{\"pong\": true}"
+  },
+  {
+    "case": "A5",
+    "name": "test_llm 实际连通",
+    "ok": true,
+    "detail": "model=deepseek-flash latency=979ms sample=''"
+  },
+  {
+    "case": "A6",
+    "name": "test_llm 无效 Key 的错误映射",
+    "ok": true,
+    "detail": "🔑 API Key 无效或已过期（HTTP 401）。\n请点击左下角「配置」检查并重新填写 API Key（可先点“测试连接”验证）。"
+  },
+  {
+    "case": "A7",
+    "name": "test_llm 空 Key 回退默认凭证",
+    "ok": true,
+    "detail": "ok=True msg=(连通)"
+  },
+  {
+    "case": "A8",
+    "name": "未知方法返回错误",
+    "ok": true,
+    "detail": "{\"code\": -32603, \"message\": \"Unknown method: no_such_method\"}"
+  },
+  {
+    "case": "A9",
+    "name": "calc_deadline 字符串 days 容错（不得抛裸异常）",
+    "ok": true,
+    "detail": "rpc_error=None deadline=2026-09-28"
+  },
+  {
+    "case": "B1",
+    "name": "legal_search 法条速查",
+    "ok": true,
+    "detail": "10 条 rewritten=False used='买卖合同 逾期付款 违约金'"
+  },
+  {
+    "case": "B2",
+    "name": "legal_search 案例速查",
+    "ok": true,
+    "detail": "3 条"
+  },
+  {
+    "case": "B3",
+    "name": "legal_search 权威案例（元典 MCP）",
+    "ok": true,
+    "detail": "6 条 首条=李杏英诉上海大润发超市存包损害赔偿案 案号=null note="
+  },
+  {
+    "case": "B4",
+    "name": "legal_search 法条反查类案",
+    "ok": true,
+    "detail": "10 条 ft_used=中华人民共和国民法典第九百一十七条"
+  },
+  {
+    "case": "B5",
+    "name": "legal_search 法条反查缺条号 → 明确报错",
+    "ok": true,
+    "detail": "请按「法律名 条号」输入，如：民法典 第九百一十七条（或 民法典 第917条）"
+  },
+  {
+    "case": "B6",
+    "name": "verify_citation 现行有效法条",
+    "ok": true,
+    "detail": "status=现行有效 src=国家法律法规数据库 matched=第584条 bbbs=有"
+  },
+  {
+    "case": "B7",
+    "name": "verify_citation 已废止法律",
+    "ok": true,
+    "detail": "status=已废止 replaced=None src=国家法律法规数据库"
+  },
+  {
+    "case": "B8",
+    "name": "verify_citation 本地废止表命中",
+    "ok": true,
+    "detail": "status=已废止 src=国家法律法规数据库"
+  },
+  {
+    "case": "B9",
+    "name": "verify_citation 不存在的法律 → 诚实未找到",
+    "ok": true,
+    "detail": "{\"valid\": null, \"error\": \"未找到匹配的法规: 《中华人民共和国不存在法》\", \"searched\": \"不存在法\"}"
+  },
+  {
+    "case": "B10",
+    "name": "verify_citation 空法名 → 参数错误",
+    "ok": true,
+    "detail": "未提供法条名称"
+  },
+  {
+    "case": "B11",
+    "name": "npc_law_docx_url 官方原文签名链接",
+    "ok": true,
+    "detail": "https://flkoss.obs-bj2.cucloud.cn/prod/20200528/827f65fcb68f40cb941eed996c5212b0"
+  },
+  {
+    "case": "B12",
+    "name": "npc_law_docx_url 无效 bbbs 的错误形态",
+    "ok": true,
+    "detail": "rpc_error=获取下载地址失败: 操作成功"
+  },
+  {
+    "case": "B13",
+    "name": "review_document 瑕疵合同命中多维",
+    "ok": true,
+    "detail": "3 项 模块=['M3', 'M5', 'M7'] 耗时=0.0s（该合同大写与数字金额一致，M4 不命中属正确行为）"
+  },
+  {
+    "case": "B13b",
+    "name": "八维规则逐一可达（M1-M8）",
+    "ok": true,
+    "detail": "命中=['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8'] 未命中=[]"
+  },
+  {
+    "case": "B13c",
+    "name": "M4 万元级正确金额零误报",
+    "ok": true,
+    "detail": "大写 385 万 ↔ ￥3,850,000 判定一致"
+  },
+  {
+    "case": "B14",
+    "name": "review_document stats 结构",
+    "ok": true,
+    "detail": "chars=347 lines=14 sev={'一般': 2, '提示': 1}"
+  },
+  {
+    "case": "B15",
+    "name": "review_document 干净文书零严重问题",
+    "ok": true,
+    "detail": "严重=0 总=0"
+  },
+  {
+    "case": "B16",
+    "name": "review_document 空文本",
+    "ok": true,
+    "detail": "{\"chars\": 0, \"lines\": 0, \"by_module\": {}, \"by_severity\": {}}"
+  },
+  {
+    "case": "B17",
+    "name": "review_document 含法条时效校验（NPC 在线）",
+    "ok": true,
+    "detail": "CIT 项=0 总=3 耗时=0.0s"
+  },
+  {
+    "case": "C1",
+    "name": "calc_deadline 举证期限",
+    "ok": true,
+    "detail": "起=2026-09-12 原=2026-09-27 终=2026-09-28 顺延=True 剩余=15 状态=正常 依据=《民法典》第201条：期间届满的最后一日为法定休假日的，以休"
+  },
+  {
+    "case": "C2",
+    "name": "calc_deadline 国庆假期顺延",
+    "ok": true,
+    "detail": "原=2026-10-07 终=2026-10-09 原因=届满日为法定节假日(国庆)"
+  },
+  {
+    "case": "C2b",
+    "name": "calc_deadline 关闭顺延开关",
+    "ok": true,
+    "detail": "终=2026-10-07"
+  },
+  {
+    "case": "C3",
+    "name": "calc_deadline 已逾期状态",
+    "ok": true,
+    "detail": "剩余=-26 状态=已过期"
+  },
+  {
+    "case": "C4",
+    "name": "calc_deadline 非法日期 → 软错误",
+    "ok": true,
+    "detail": "日期格式错误: time data 'not-a-date' does not match form"
+  },
+  {
+    "case": "C5",
+    "name": "calc_deadline 无天数无有效类型 → 报错",
+    "ok": true,
+    "detail": "需要提供天数或有效的期限类型"
+  },
+  {
+    "case": "C6",
+    "name": "calc_limitation_period 合同",
+    "ok": true,
+    "detail": "届满=2026-01-15 剩余=-241 状态=已过期 依据=民法典第188、189条"
+  },
+  {
+    "case": "C7",
+    "name": "calc_limitation_period 劳动-一般",
+    "ok": true,
+    "detail": "届满=2026-06-01 剩余=-104 状态=已过期 依据=劳动争议调解仲裁法第27条第1款"
+  },
+  {
+    "case": "C8",
+    "name": "calc_limitation_period 行政-一般",
+    "ok": true,
+    "detail": "届满=2027-02-01 剩余=141 状态=正常 依据=行政诉讼法第46条第1款"
+  },
+  {
+    "case": "C9",
+    "name": "calc_limitation_period 保险-人寿",
+    "ok": true,
+    "detail": "届满=2026-03-01 剩余=-196 状态=已过期 依据=保险法第26条第2款"
+  },
+  {
+    "case": "C9b",
+    "name": "calc_limitation_period 民事-一般",
+    "ok": true,
+    "detail": "届满=2027-03-01 剩余=169 状态=正常 依据=民法典第188条第1款"
+  },
+  {
+    "case": "C9c",
+    "name": "calc_limitation_period 民事-最长保护期",
+    "ok": true,
+    "detail": "届满=2025-01-01 剩余=-620 状态=已过期 依据=民法典第188条第2款"
+  },
+  {
+    "case": "C9d",
+    "name": "calc_limitation_period 侵权",
+    "ok": true,
+    "detail": "届满=2027-06-01 剩余=261 状态=正常 依据=民法典第188条"
+  },
+  {
+    "case": "C9e",
+    "name": "calc_limitation_period 行政复议",
+    "ok": true,
+    "detail": "届满=2026-09-30 剩余=17 状态=紧急 依据=行政复议法第9条"
+  },
+  {
+    "case": "C9f",
+    "name": "calc_limitation_period 国家赔偿",
+    "ok": true,
+    "detail": "届满=2026-01-01 剩余=-255 状态=已过期 依据=国家赔偿法第39条"
+  },
+  {
+    "case": "C9g",
+    "name": "calc_limitation_period 票据-追索",
+    "ok": true,
+    "detail": "届满=2027-02-01 剩余=141 状态=正常 依据=票据法第17条第1项"
+  },
+  {
+    "case": "C9h",
+    "name": "calc_limitation_period 海商",
+    "ok": true,
+    "detail": "届满=2025-01-01 剩余=-620 状态=已过期 依据=海商法第257条"
+  },
+  {
+    "case": "C9i",
+    "name": "calc_limitation_period 劳动-报酬离职",
+    "ok": true,
+    "detail": "届满=2026-06-01 剩余=-104 状态=已过期 依据=劳动争议调解仲裁法第27条第4款"
+  },
+  {
+    "case": "C9j",
+    "name": "calc_limitation_period 保险-非人寿",
+    "ok": true,
+    "detail": "届满=2026-01-01 剩余=-255 状态=已过期 依据=保险法第26条第1款"
+  },
+  {
+    "case": "C9k",
+    "name": "calc_limitation_period 行政-未告知诉权",
+    "ok": true,
+    "detail": "届满=2026-06-01 剩余=-104 状态=已过期 依据=行政诉讼法第46条 + 最高法解释第65条"
+  },
+  {
+    "case": "C9l",
+    "name": "calc_limitation_period 行政-不动产",
+    "ok": true,
+    "detail": "届满=2020-01-01 剩余=-2447 状态=已过期 依据=行政诉讼法第46条第2款"
+  },
+  {
+    "case": "C9m",
+    "name": "calc_limitation_period 行政-其他最长",
+    "ok": true,
+    "detail": "届满=2023-01-01 剩余=-1351 状态=已过期 依据=行政诉讼法第46条第2款"
+  },
+  {
+    "case": "C9n",
+    "name": "calc_limitation_period 票据-再追索",
+    "ok": true,
+    "detail": "届满=2026-09-01 剩余=-12 状态=已过期 依据=票据法第17条第4项"
+  },
+  {
+    "case": "C9o",
+    "name": "calc_limitation_period 在职报酬（前端本地特判）",
+    "ok": true,
+    "detail": "后端未收录属预期（前端本地处理），返回=未找到案件类型 '劳动-报酬在职' 的时效规则"
+  },
+  {
+    "case": "C10",
+    "name": "calc_limitation_period 未知类型 → 列出支持项",
+    "ok": true,
+    "detail": "未找到案件类型 '外星法' 的时效规则 支持 17 类"
+  },
+  {
+    "case": "C11",
+    "name": "calc_limitation_period 缺日期 → 报错",
+    "ok": true,
+    "detail": "需要提供案件类型和事件日期"
+  },
+  {
+    "case": "C12",
+    "name": "recommend_skills_for_stage「待处理」",
+    "ok": true,
+    "detail": "2 个 ['案件登记', '利益冲突检索']"
+  },
+  {
+    "case": "C13",
+    "name": "recommend_skills_for_stage「审查中」",
+    "ok": true,
+    "detail": "3 个 ['案件简报', '合同审查', '法规检索']"
+  },
+  {
+    "case": "C14",
+    "name": "recommend_skills_for_stage「证据收集」",
+    "ok": true,
+    "detail": "3 个 ['证据审查', '时间线梳理', '诉讼请求矩阵']"
+  },
+  {
+    "case": "C15",
+    "name": "recommend_skills_for_stage「诉讼中」",
+    "ok": true,
+    "detail": "3 个 ['代理词起草', '诉求文书', '庭审准备']"
+  },
+  {
+    "case": "C16",
+    "name": "recommend_skills_for_stage「执行中」",
+    "ok": true,
+    "detail": "3 个 ['案件简报', '执行申请书', '案件归档']"
+  },
+  {
+    "case": "C17",
+    "name": "recommend_skills_for_stage「调解中」",
+    "ok": true,
+    "detail": "2 个 ['调解协议', '诉求分析']"
+  },
+  {
+    "case": "C18",
+    "name": "recommend_skills_for_stage「已完成」",
+    "ok": true,
+    "detail": "1 个 ['案件归档']"
+  },
+  {
+    "case": "C18b",
+    "name": "recommend_skills_for_stage「已归档」按设计为空",
+    "ok": true,
+    "detail": "归档案件无进行中工作，空推荐属设计"
+  },
+  {
+    "case": "C18c",
+    "name": "推荐技能均为技能库在册技能",
+    "ok": true,
+    "detail": "覆盖 17 个推荐项，全部在册"
+  },
+  {
+    "case": "C20",
+    "name": "recommend_skills_for_stage 未知阶段",
+    "ok": true,
+    "detail": "0 个（期望 0）"
+  },
+  {
+    "case": "C21",
+    "name": "parse_document PDF",
+    "ok": true,
+    "detail": "extractor=pymupdf chars=56 err=None"
+  },
+  {
+    "case": "C22",
+    "name": "parse_document DOCX 中文内容",
+    "ok": true,
+    "detail": "extractor=python-docx chars=35 命中保密=True"
+  },
+  {
+    "case": "C23",
+    "name": "parse_document XLSX",
+    "ok": true,
+    "detail": "extractor=openpyxl chars=64"
+  },
+  {
+    "case": "C24",
+    "name": "parse_document 纯文本",
+    "ok": true,
+    "detail": "extractor=plain chars=19"
+  },
+  {
+    "case": "C25",
+    "name": "parse_document 旧版 .doc → 明确提示",
+    "ok": true,
+    "detail": "旧版 .doc 请先另存为 .docx 或 PDF"
+  },
+  {
+    "case": "C26",
+    "name": "parse_document 非法 base64",
+    "ok": true,
+    "detail": "ok=False error=None chars=0"
+  },
+  {
+    "case": "C27",
+    "name": "kb_search 案件知识库中文检索",
+    "ok": true,
+    "detail": "3 片 索引3篇/3片 首片=往来函件.txt score=1.78"
+  },
+  {
+    "case": "C28",
+    "name": "kb_search 违约条款定位",
+    "ok": true,
+    "detail": "首片命中违约金=True 片段='买卖合同\\n甲方（出卖人）：恒信建材有限公司\\n乙方（买受人）：宏达建设公司\\n第一条'"
+  },
+  {
+    "case": "C29",
+    "name": "experience_search 跨案件经验召回",
+    "ok": true,
+    "detail": "1 条 首位=是否申请财产保全"
+  },
+  {
+    "case": "C30",
+    "name": "experience_search 空语料",
+    "ok": true,
+    "detail": "0 条"
+  },
+  {
+    "case": "C31",
+    "name": "export_docx 法律文书排版导出",
+    "ok": true,
+    "detail": "filename=民事起诉状.docx bytes=35762"
+  },
+  {
+    "case": "C32",
+    "name": "export_docx 空标题回退",
+    "ok": true,
+    "detail": "filename=法律文书.docx"
+  },
+  {
+    "case": "C33",
+    "name": "export_docx 标题非法字符净化",
+    "ok": true,
+    "detail": "filename=非法_标题_带_字符_.docx"
+  },
+  {
+    "case": "D1",
+    "name": "watchdog_sync 案件同步落盘",
+    "ok": true,
+    "detail": "synced=9/9"
+  },
+  {
+    "case": "D2",
+    "name": "watchdog_status 即时扫描",
+    "ok": true,
+    "detail": "在册=9 告警=6 类型=['court', 'due-soon', 'overdue']"
+  },
+  {
+    "case": "D3",
+    "name": "告警分级：逾期(overdue)",
+    "ok": true,
+    "detail": "1 条 例=evidence已逾期 3 天"
+  },
+  {
+    "case": "D4",
+    "name": "告警分级：临期(due-soon)",
+    "ok": true,
+    "detail": "4 条"
+  },
+  {
+    "case": "D5",
+    "name": "告警分级：开庭(court)",
+    "ok": true,
+    "detail": "1 条"
+  },
+  {
+    "case": "D6",
+    "name": "告警按紧急度升序",
+    "ok": true,
+    "detail": "days=[-3, 0, 2, 4, 5, 6]"
+  },
+  {
+    "case": "D7",
+    "name": "已归档案件不产生告警",
+    "ok": true,
+    "detail": "0 条"
+  },
+  {
+    "case": "D8",
+    "name": "告警分级：停滞(stale) >14 天",
+    "ok": true,
+    "detail": "1 条 detail=处于「证据收集」已 30 天无进展"
+  },
+  {
+    "case": "D9",
+    "name": "alertText 中文告警清单",
+    "ok": true,
+    "detail": "49 字 | 共 1 项告警："
+  },
+  {
+    "case": "D10",
+    "name": "watchdog_briefing 最近晨报",
+    "ok": true,
+    "detail": "at=2026-09-12T02:01:54 status=completed 正文=308 字 | LawClaw 值守扫描 — 2026-09-12 02:01"
+  },
+  {
+    "case": "D11",
+    "name": "watchdog_briefing 未知任务",
+    "ok": true,
+    "detail": "值守任务未注册"
+  },
+  {
+    "case": "D12",
+    "name": "watchdog_run_now 立即触发",
+    "ok": true,
+    "detail": "job=lawclaw-morning-briefing id=17b6e711fc84"
+  },
+  {
+    "case": "D13",
+    "name": "watchdog_run_now 未知任务 → 报错",
+    "ok": true,
+    "detail": "值守任务不存在（可能被配置关闭）"
+  },
+  {
+    "case": "D14",
+    "name": "触发后晨报刷新（执行链闭合）",
+    "ok": true,
+    "detail": "at=2026-09-12T02:01:54 status=completed 正文=308 字"
+  },
+  {
+    "case": "E1",
+    "name": "chat 基础法律咨询",
+    "ok": true,
+    "detail": "319 字 引用=1 上下文={'history_rounds': 0, 'kb_chunks': 0, 'kb_docs': 0, 'experience': 0, 'files': 0}"
+  },
+  {
+    "case": "E2",
+    "name": "chat 案件上下文注入（期限问答）",
+    "ok": true,
+    "detail": "1286 字 命中举证期限日期=是 上下文={'history_rounds': 0, 'kb_chunks': 0, 'kb_docs': 0, 'experience': 0, 'files': 0}"
+  },
+  {
+    "case": "E3",
+    "name": "chat 案件文档库注入（KB 检索）",
+    "ok": true,
+    "detail": "回答='3,850,000 元' 命中金额=是 kb_chunks=2"
+  },
+  {
+    "case": "E4",
+    "name": "chat 历史经验召回注入",
+    "ok": true,
+    "detail": "命中保全=是 experience=1"
+  },
+  {
+    "case": "E5",
+    "name": "chat 附件解析注入",
+    "ok": true,
+    "detail": "215 字 命中交付期限=是 files=1"
+  },
+  {
+    "case": "E6",
+    "name": "chat 技能加载（commercial-review）",
+    "ok": true,
+    "detail": "4134 字 开头='## 审查前置说明（两项）\\n1. **技能路由**：本机没有名为 `co'"
+  },
+  {
+    "case": "E7",
+    "name": "chat 无效 Key → error:true + 中文提示",
+    "ok": true,
+    "detail": "error=True resp='🔑 API Key 无效或已过期（HTTP 401）。\\n请点击左下角「配置」检查并重新填写 API Key（可先点“测试'"
+  },
+  {
+    "case": "E8",
+    "name": "同连接连发 chat 串行执行（先到先服务）",
+    "ok": true,
+    "detail": "RUN_STARTED=True 完成顺序=['#1', '#2']"
+  },
+  {
+    "case": "E10",
+    "name": "abort 无活动 run 时返回 aborted",
+    "ok": true,
+    "detail": "{\"status\": \"aborted\"}"
+  },
+  {
+    "case": "F1",
+    "name": "list_mcp_servers 6 服务器",
+    "ok": true,
+    "detail": "6 个 / 启用 6：['yuandian-law', 'yuandian-case', 'yuandian-company', 'yuandian-contract-review', 'yuandian-securities', 'yuandian-hallucination']"
+  },
+  {
+    "case": "F2",
+    "name": "list_hermes_skills 技能库",
+    "ok": true,
+    "detail": "83 个 / 11 组"
+  },
+  {
+    "case": "F3",
+    "name": "技能中文化覆盖（启用即需中文显示名）",
+    "ok": true,
+    "detail": "83 个技能全部有中文名"
+  },
+  {
+    "case": "F4",
+    "name": "setup_save 写入凭证",
+    "ok": true,
+    "detail": "status=saved 写入Key=是"
+  },
+  {
+    "case": "F5",
+    "name": "setup_save 保留非托管行（元典 Key）",
+    "ok": true,
+    "detail": "YUANDIAN_API_KEY 保留=是"
+  },
+  {
+    "case": "F6",
+    "name": "setup_save 写入律师画像 USER.md",
+    "ok": true,
+    "detail": "命中姓名+律所=是"
+  },
+  {
+    "case": "F7",
+    "name": "还原后 initialize 仍可用",
+    "ok": true,
+    "detail": "configured=True"
+  }
+]

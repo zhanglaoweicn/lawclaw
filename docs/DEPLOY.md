@@ -172,9 +172,15 @@ src-tauri/target/release/bundle/nsis/LawClaw_0.1.0_x64-setup.exe   # NSIS 安装
 1. 组装 payload（Hermes 底座 + `backend/*.py` 全部模块 + 技能库 + 许可文件）；
 2. 构建**独立可重定位的 Python 运行时**（见下）；
 3. 前端构建；
-4. Tauri 打包（`cargo clean -p lawclaw` 强制 tauri-build 重跑，避免复用旧产物）；
+4. Tauri 打包，**顺序有讲究**：`cargo clean -p lawclaw` → `cargo build --release` 预编译出
+   `lawclaw.exe` 与 `WebView2Loader.dll` → 把这两者归档进 payload → 再 `tauri build` 只做打包。
+   ⚠ 不能反过来：安装器的 resources 是在 **bundle 那一刻**从 payload 目录快照的，
+   打包完成后再往 payload 里拷文件就永远进不了安装包（曾导致安装版缺 `WebView2Loader.dll`、
+   装完启动报「找不到 WebView2Loader.dll」。GNU 工具链下 exe **静态导入**这个 DLL，
+   Tauri 的 NSIS 打包不会自动带上它；便携版当时正常是因为打包时手动拷了）；
 5. 组装便携目录（`--portable`）；
-6. **发布物自检**：拦截 `.hermes/{sessions,memories,logs,state.db}` 等运行时数据与任何密钥；
+6. **发布物自检**：拦截 `.hermes/{sessions,memories,logs,state.db}` 等运行时数据与任何密钥，
+   并检查**运行时依赖在位**（`LawClaw.exe` + `WebView2Loader.dll` 必须都在 payload 根）；
 7. **包内后端冒烟**：用捆绑运行时真实启动一次后端并打 RPC（`ping`/技能数/MCP 数/值守扫描）——
    这一步专门拦"漏带模块"这类静态检查抓不到的问题。
 

@@ -298,16 +298,42 @@ def step_tauri():
     subprocess.run(["cargo", "clean", "-p", "lawclaw"], cwd=ROOT / "src-tauri",
                    check=False, shell=True, env=env)
 
+    # ── 先编译，再归档，最后打包 ──
+    # 顺序很重要：Tauri 安装器的 resources 是在 **bundle 那一刻**从 payload 目录快照的，
+    # 打包完成后再往 payload 里拷文件，就永远进不了安装包（曾导致安装版缺 WebView2Loader.dll、
+    # 装完启动报「找不到 WebView2Loader.dll」）。所以先 cargo build 产出 exe 与 DLL，
+    # 归档进 payload，再让 tauri build 只做打包（此时 cargo 已是最新，不会重复编译）。
+    print("    预编译（产出 exe 与 WebView2Loader.dll，供打包前归档）…")
+    subprocess.run(["cargo", "build", "--release"], cwd=ROOT / "src-tauri",
+                   check=True, shell=True, env=env)
+    _archive_runtime_bits()
+
     subprocess.run(
         ["pnpm", "tauri", "build", "--config", str(overlay.relative_to(ROOT)).replace("\\", "/")],
         cwd=ROOT, check=True, shell=True, env=env,
     )
-    # 把刚构建的 exe 直接放进本风味 payload：便携目录/交付时不再靠 target/ 里的“当前 exe”，
-    # 从根上消除拷错风味 exe 的可能。
+    # 打包后再核对一次（bundle 之后 cargo 不会再改产物，这里只是保险与日志）
+    _archive_runtime_bits(quiet=True)
+
+
+def _archive_runtime_bits(quiet: bool = False) -> None:
+    """把 exe 与 WebView2Loader.dll 归档进 payload 根。
+
+    二者必须落在 exe 旁边：payload 会整体映射到安装目录与便携目录。
+    WebView2Loader.dll 是 GNU 工具链下 exe 的**静态导入依赖**，缺了进程直接报错起不来。
+    """
     exe = ROOT / "src-tauri" / "target" / "release" / "lawclaw.exe"
+    wv2 = ROOT / "src-tauri" / "target" / "release" / "WebView2Loader.dll"
     if exe.exists():
         shutil.copy2(exe, PAYLOAD / "LawClaw.exe")
-        print(f"    exe 已归档到 {PAYLOAD.name}/LawClaw.exe")
+        if not quiet:
+            print(f"    exe 已归档到 {PAYLOAD.name}/LawClaw.exe")
+    if wv2.exists():
+        shutil.copy2(wv2, PAYLOAD / "WebView2Loader.dll")
+        if not quiet:
+            print(f"    WebView2Loader.dll 已归档（{wv2.stat().st_size} bytes，exe 运行时必需）")
+    if not quiet and not wv2.exists():
+        raise SystemExit("✗ 未找到 target/release/WebView2Loader.dll —— 安装后应用将无法启动，构建终止")
 
 
 def main():
@@ -503,6 +529,13 @@ def audit_payload():
     skills = be / ".hermes" / "skills"
     n = len([d for d in skills.iterdir() if d.is_dir()]) if skills.exists() else 0
     print(f"    ✓ 技能目录 {n} 个；payload 体积 {_dir_size_mb(PAYLOAD):.0f} MB")
+    # 运行时依赖必须在位：exe 与它的静态导入 DLL 都要落到安装目录/便携目录里，
+    # 否则会出现「找不到 WebView2Loader.dll」这类安装后才暴露的启动失败。
+    missing = [f for f in ("LawClaw.exe", "WebView2Loader.dll") if not (PAYLOAD / f).exists()]
+    if missing:
+        print(f"    ✗ 缺少运行时依赖：{missing} —— 安装后应用将无法启动")
+    else:
+        print("    ✓ 运行时依赖在位（LawClaw.exe + WebView2Loader.dll）")
 
 
 def _dir_size_mb(p: Path) -> float:

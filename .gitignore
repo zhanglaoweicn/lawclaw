@@ -63,3 +63,6 @@ backend/build_log.txt
 backend/lawclaw-backend.spec
 backend/test_export_sample.docx
 backend/tests/.mineru_poc/
+
+# 测试报告产物（每次运行重写，不入库）
+backend/tests/lawyer_full_report.json

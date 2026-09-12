@@ -1,0 +1,46 @@
+name: CI
+
+# 说明：本仓库大部分集成能力需要「运行中的后端 + LLM/数据源凭证」，
+# 因此这里只跑**无需密钥、可离线**的部分，作为提交的最低质量闸门：
+#   1) 前端类型检查 + 生产构建（vue-tsc + vite）
+#   2) 两个纯函数测试套件（法条引用抽取、文书校对引擎）
+# 完整的端到端套件见 backend/tests/（需先启动后端，见 README「开发」一节）。
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  frontend:
+    name: 前端类型检查与构建
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+  python-tests:
+    name: 后端纯函数测试
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # npc_law（NPC 官方时效查询）依赖 requests；离线环境下会自动回落到本地废止表
+      - run: pip install requests
+      - name: 法条引用抽取
+        working-directory: backend
+        run: python -X utf8 tests/test_citations.py
+      - name: 文书校对引擎（八维 + 法条时效）
+        working-directory: backend
+        run: python -X utf8 tests/test_doc_review.py

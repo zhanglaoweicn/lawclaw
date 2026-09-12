@@ -1,0 +1,176 @@
+# LawClaw (律爪) 配置文件
+name: "LawClaw"
+version: "0.1.0"
+
+model:
+  provider: "custom"
+  name: "agnes-2.0-flash"
+  base_url: "https://apihub.agnes-ai.com/v1"
+
+agent:
+  max_iterations: 30
+  quiet_mode: true
+
+display:
+  tool_prefix: "┊"
+  branding:
+    agent_name: "LawClaw 律爪"
+    welcome: "你好，我是 LawClaw，你的律师助理。"
+    response_label: " ⚖ LawClaw "
+
+skills:
+  enabled:
+    # 基础技能（LawClaw 内置）
+    - legal/fee-calculator
+    - legal/document-draft
+    # 法律研究（元典数据）
+    - prc-legal-research-law-search
+    - prc-legal-research-case-search
+    - prc-legal-research-deep-research
+    - prc-legal-research-company-search
+    # 诉讼业务
+    # 执业画像冷启动访谈（技能包 #4 路线图：写入 LEGAL_AGENT_PROFILE_HOME 供下游技能读取）
+    - litigation-cold-start-interview
+    - corporate-cold-start-interview
+    - commercial-cold-start-interview
+    - litigation-matter-intake
+    - litigation-matter-briefing
+    - litigation-matter-update
+    - litigation-matter-close
+    - litigation-cn-evidence-review
+    - litigation-demand-draft
+    - litigation-deposition-prep
+    - litigation-demand-received
+    - litigation-brief-section-drafter
+    - litigation-claim-chart
+    - litigation-chronology
+    # 公司业务
+    - corporate-entity-compliance
+    - corporate-diligence-issue-extraction
+    - corporate-board-minutes
+    - corporate-written-consent
+    # 商业合同
+    - commercial-review
+    - commercial-nda-review
+    - commercial-saas-msa-review
+    - commercial-vendor-agreement-review
+
+    # claude-for-legal-ZH 增量领域（劳动/知产/AI治理/隐私/监管/产品合规，Apache 2.0）
+    - ai-governance-ai-inventory
+    - ai-governance-aia-generation
+    - ai-governance-cold-start-interview
+    - ai-governance-policy-monitor
+    - ai-governance-policy-starter
+    - ai-governance-reg-gap-analysis
+    - ai-governance-use-case-triage
+    - ai-governance-vendor-ai-review
+    - employment-cold-start-interview
+    - employment-expansion-kickoff
+    - employment-expansion-update
+    - employment-handbook-updates
+    - employment-hiring-review
+    - employment-internal-investigation
+    - employment-international-expansion
+    - employment-investigation-add
+    - employment-investigation-memo
+    - employment-investigation-open
+    - employment-investigation-query
+    - employment-investigation-summary
+    - employment-leave-tracker
+    - employment-log-leave
+    - employment-policy-drafting
+    - employment-termination-review
+    - employment-wage-hour-qa
+    - employment-worker-classification
+    - ip-cease-desist
+    - ip-clearance
+    - ip-cold-start-interview
+    - ip-fto-triage
+    - ip-infringement-triage
+    - ip-invention-intake
+    - ip-ip-clause-review
+    - ip-oss-review
+    - ip-portfolio
+    - ip-takedown
+    - privacy-cold-start-interview
+    - privacy-dpa-review
+    - privacy-dsar-response
+    - privacy-pia-generation
+    - privacy-policy-monitor
+    - privacy-reg-gap-analysis
+    - privacy-use-case-triage
+    - product-cold-start-interview
+    - product-feature-risk-assessment
+    - product-is-this-a-problem
+    - product-launch-review
+    - product-marketing-claims-review
+    - regulatory-cold-start-interview
+    - regulatory-comments
+    - regulatory-gap-surfacer
+    - regulatory-gaps
+    - regulatory-policy-diff
+    - regulatory-policy-redraft
+    - regulatory-reg-feed-watcher
+
+memory:
+  provider: ""
+  memory_enabled: true
+  user_profile_enabled: true
+  memory_char_limit: 3000
+  user_char_limit: 2000
+  nudge_interval: 10
+
+mcp_servers:
+  yuandian-law:
+    url: "https://open.chineselaw.com/mcp/law/stream"
+    headers:
+      Accept: "application/json, text/event-stream"
+      Authorization: "Bearer ${YUANDIAN_API_KEY}"
+    enabled: true
+    sampling:
+      enabled: false
+  yuandian-case:
+    url: "https://open.chineselaw.com/mcp/case/stream"
+    headers:
+      Accept: "application/json, text/event-stream"
+      Authorization: "Bearer ${YUANDIAN_API_KEY}"
+    enabled: true
+    sampling:
+      enabled: false
+  yuandian-company:
+    url: "https://open.chineselaw.com/mcp/company/stream"
+    headers:
+      Authorization: "Bearer ${YUANDIAN_API_KEY}"
+    enabled: true
+    sampling:
+      enabled: false
+  yuandian-contract-review:
+    url: "https://open.chineselaw.com/mcp/contract-review/stream"
+    headers:
+      Accept: "application/json, text/event-stream"
+      Authorization: "Bearer ${YUANDIAN_API_KEY}"
+    enabled: true
+    sampling:
+      enabled: false
+  yuandian-securities:
+    url: "https://open.chineselaw.com/mcp/securities/stream"
+    headers:
+      Accept: "application/json, text/event-stream"
+      Authorization: "Bearer ${YUANDIAN_API_KEY}"
+    enabled: true
+    sampling:
+      enabled: false
+  yuandian-hallucination:
+    url: "https://open.chineselaw.com/mcp/hallucination/stream"
+    headers:
+      Accept: "application/json, text/event-stream"
+      Authorization: "Bearer ${YUANDIAN_API_KEY}"
+    enabled: true
+    sampling:
+      enabled: false
+
+gateway:
+  enabled: false
+
+logging:
+  level: "INFO"

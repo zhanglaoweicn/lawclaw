@@ -1,0 +1,13 @@
+# LawClaw 网关平台配置
+# 后续配置飞书和企微
+
+platforms:
+  feishu:
+    enabled: false
+    app_id: "${FEISHU_APP_ID}"
+    app_secret: "${FEISHU_APP_SECRET}"
+
+  wecom:
+    enabled: false
+    corp_id: "${WECOM_CORP_ID}"
+    corp_secret: "${WECOM_CORP_SECRET}"

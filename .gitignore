@@ -1,0 +1,65 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ── LawClaw 同步安全网追加（2026-09-11）──
+# 密钥与环境（绝不入库）
+backend/.env
+.env
+*.env.local
+# 运行时数据（.hermes 含 sessions/state.db/auth）
+# 注意：只忽略 .hermes 的**内容**，以便单独放行 build 输入（技能库 + 启用白名单）——
+# 否则从仓库全新克隆后打出的包会没有任何法律技能（发布不可复现）。
+backend/.hermes/*
+!backend/.hermes/skills/
+!backend/.hermes/config.yaml
+# 技能库内的运行期缓存/日志仍不进库
+backend/.hermes/skills/**/__pycache__/
+backend/.hermes/skills/**/*.pyc
+# 构建产物与缓存
+node_modules/
+dist/
+dist-ssr/
+src-tauri/target/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+# 日志与临时
+*.log
+backend/backend_*.log
+backend/ws_*.log
+logs/
+# 演示种子脚本产物与临时目录
+/tmp/
+.DS_Store
+release/
+.venv*/
+
+# ── 本地构建 / PoC 残留（曾在早期被误提交，公开仓库不收录）──
+# 注意：注释必须独占一行——写在模式后面会让整行变成一个无效模式。
+backend/build_log.txt
+backend/lawclaw-backend.spec
+backend/test_export_sample.docx
+backend/tests/.mineru_poc/

@@ -205,35 +205,85 @@ fn request_notification_permission(app: tauri::AppHandle) -> Result<bool, String
 // ─────────────────────────────────────────────
 
 use std::process::{Child, Command};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 static BACKEND_CHILD: Mutex<Option<Child>> = Mutex::new(None);
 static OPEN_WINDOWS: AtomicUsize = AtomicUsize::new(0);
+/// 退出中：supervisor 心跳据此停手，避免「关窗杀后端 → 心跳又拉起来」。
+static SHUTDOWN: AtomicBool = AtomicBool::new(false);
+static SUPERVISOR_STARTED: AtomicBool = AtomicBool::new(false);
 
 fn backend_port_free() -> bool {
     std::net::TcpStream::connect("127.0.0.1:9876").is_err()
 }
 
 fn resolve_backend_dir() -> Option<std::path::PathBuf> {
-    // ① 显式环境变量
+    // ① 显式环境变量（开发/测试接管）
     if let Ok(dir) = std::env::var("LAWCLAW_BACKEND_DIR") {
         let p = std::path::PathBuf::from(dir);
         if p.join("main.py").exists() {
             return Some(p);
         }
     }
-    // ② dev：Cargo 清单目录的上级/backend
-    let dev_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent()?.join("backend");
-    if dev_dir.join("main.py").exists() {
-        return Some(dev_dir);
-    }
-    // ③ release：exe 同级的 backend/
+    // ② 交付形态：exe 同级的 backend/ —— 永远优先。
+    //    曾经把 dev 路径排在前面，结果在开发机上安装版会跑去跑开发树里的后端：
+    //    既让「安装版是否真能跑」的验证失去意义，也依赖编译机上的绝对路径。
     if let Ok(exe) = std::env::current_exe() {
         if let Some(dir) = exe.parent() {
             let p = dir.join("backend");
             if p.join("main.py").exists() {
                 return Some(p);
             }
+        }
+    }
+    // ③ dev：Cargo 清单目录的上级/backend（仅 debug 构建；release 里不保留编译机路径）
+    #[cfg(debug_assertions)]
+    {
+        let dev_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()?
+            .join("backend");
+        if dev_dir.join("main.py").exists() {
+            return Some(dev_dir);
+        }
+    }
+    None
+}
+
+/// 追加一行启动器日志（exe 同级的 launcher.log）。
+///
+/// GUI 进程没有控制台，`eprintln!` 等于丢进黑洞——「后端引擎未启动」这类问题因此无从排查。
+/// 日志本身是辅助手段，任何失败都静默，绝不影响启动。
+fn log_line(msg: &str) {
+    use std::io::Write;
+    let Ok(exe) = std::env::current_exe() else { return };
+    let Some(dir) = exe.parent() else { return };
+    let Ok(mut f) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(dir.join("launcher.log"))
+    else {
+        return;
+    };
+    let ts = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let _ = writeln!(f, "[{ts}] {msg}");
+}
+
+/// 回收已退出的子进程句柄（否则 guard.is_some() 会一直挡着不让重启）。
+fn reap_child() -> Option<u32> {
+    let Ok(mut guard) = BACKEND_CHILD.lock() else { return None };
+    if let Some(child) = guard.as_mut() {
+        match child.try_wait() {
+            Ok(Some(status)) => {
+                let id = child.id();
+                *guard = None;
+                log_line(&format!("backend exited: pid={id} status={status}"));
+                return Some(id);
+            }
+            Ok(None) => {}
+            Err(e) => log_line(&format!("backend try_wait failed: {e}")),
         }
     }
     None
@@ -245,15 +295,17 @@ fn spawn_backend() {
         Err(_) => return,
     };
     if guard.is_some() {
-        return; // 引用计数 >0：已在跑
+        return; // 已在跑
     }
     if !backend_port_free() {
-        return; // 用户已手动启动后端
+        // 端口已被占用：可能是用户自己起的后端，也可能只是别人临时占着。
+        // 这里不抢，由 supervisor 循环在端口释放后补拉（见 ensure_backend）。
+        return;
     }
     let dir = match resolve_backend_dir() {
         Some(d) => d,
         None => {
-            eprintln!("[LawClaw] 未找到 backend/main.py（可设 LAWCLAW_BACKEND_DIR）");
+            log_line("no backend/main.py found (set LAWCLAW_BACKEND_DIR)");
             return;
         }
     };
@@ -280,19 +332,53 @@ fn spawn_backend() {
     }
     match cmd.spawn() {
         Ok(child) => {
-            eprintln!("[LawClaw] 后端已拉起（pid {:?}，dir {}）", child.id(), dir.display());
+            log_line(&format!(
+                "backend spawned: pid={} python={} dir={}",
+                child.id(),
+                python,
+                dir.display()
+            ));
             *guard = Some(child);
         }
-        Err(e) => eprintln!("[LawClaw] 后端拉起失败: {}（python={}）", e, python),
+        Err(e) => log_line(&format!("backend spawn FAILED: {e} (python={python})")),
     }
 }
 
+/// 保证「9876 上有一个后端」——启动时端口被别人占着、或我们拉起的后端中途退出，
+/// 都能自愈。
+///
+/// 之前的实现只在 setup() 里尝试一次：若那一刻 9876 被占用（例如用户自己起了后端、
+/// 或另一个进程临时占着），应用就再也不拉后端了——端口随占用者退出而空出后，界面会一直
+/// 停在「后端引擎未启动」，只能重启应用。这里用后台心跳把这个洞补上。
+fn ensure_backend() {
+    if !backend_port_free() {
+        reap_child();
+        return; // 有后端在听 → 不干预（外部后端同样接受）
+    }
+    reap_child();
+    spawn_backend();
+}
+
+fn start_supervisor() {
+    if SUPERVISOR_STARTED.swap(true, Ordering::SeqCst) {
+        return; // 只起一条
+    }
+    std::thread::spawn(|| loop {
+        std::thread::sleep(Duration::from_secs(3));
+        if SHUTDOWN.load(Ordering::SeqCst) {
+            return;
+        }
+        ensure_backend();
+    });
+}
+
 fn kill_backend() {
+    SHUTDOWN.store(true, Ordering::SeqCst);
     if let Ok(mut guard) = BACKEND_CHILD.lock() {
         if let Some(child) = guard.as_mut() {
             let _ = child.kill();
             let _ = child.wait();
-            eprintln!("[LawClaw] 后端进程已停止");
+            log_line("backend stopped (app shutting down)");
         }
         *guard = None;
     }
@@ -322,7 +408,11 @@ pub fn run() {
             }
             // 引用计数：登记窗口数并拉起后端（幂等——已有后端监听 9876 则跳过）
             OPEN_WINDOWS.store(app.webview_windows().len(), Ordering::SeqCst);
+            SHUTDOWN.store(false, Ordering::SeqCst);
+            log_line("app started");
             spawn_backend();
+            // 心跳兜底：端口当时被占、或后端中途退出，都能自愈
+            start_supervisor();
             Ok(())
         })
         .on_window_event(|_window, event| {

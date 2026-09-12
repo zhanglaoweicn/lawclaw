@@ -35,7 +35,8 @@
               <el-icon v-if="!testing" style="margin-right:4px"><Connection /></el-icon>
               测试连接
             </el-button>
-            <span v-if="testResult" :class="['test-result', testResult.ok ? 'ok' : 'bad']">
+            <span v-if="!engineReady" class="test-result waiting">引擎启动中…（首次启动约 10–30 秒，连上后再点测试）</span>
+            <span v-else-if="testResult" :class="['test-result', testResult.ok ? 'ok' : 'bad']">
               {{ testResult.ok ? `✓ 连接成功（${testResult.model}，${testResult.latency_ms ?? '?'}ms）` : testResult.message }}
             </span>
           </div>
@@ -188,10 +189,15 @@ import { ref, reactive, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Connection } from '@element-plus/icons-vue'
 import { useSetupStore } from '../stores/setup'
+import { useChatStore } from '../stores/chat'
 import { backend } from '../lib/backend'
 
 const emit = defineEmits<{ done: [] }>()
 const setupStore = useSetupStore()
+// 引擎（捆绑 Python 后端）从进程启动到可连通常要 8–30 秒。把「连上没有」显式展示出来，
+// 免得用户在启动过程中点「测试连接」被「后端引擎未启动」误导。
+const chatStore = useChatStore()
+const engineReady = computed(() => chatStore.connected)
 
 const SECRET_PLACEHOLDER = '••••••'
 
@@ -237,7 +243,9 @@ async function onTestConnection() {
     testResult.value = r
     if (!r.ok && r.message) ElMessage.error(r.message)
   } catch (e: any) {
-    testResult.value = { ok: false, message: e?.message?.includes('未连接') ? '后端引擎未启动' : (e?.message || '连接失败') }
+    const m = e?.message || '连接失败'
+    const starting = m.includes('未连接') || m.includes('启动中')
+    testResult.value = { ok: false, message: starting ? '引擎仍在启动中，请稍候再点一次「测试连接」' : m }
   } finally {
     testing.value = false
   }
@@ -430,6 +438,7 @@ async function finish() {
 }
 .test-result.ok { color: var(--el-color-success); }
 .test-result.bad { color: var(--el-color-danger); }
+.test-result.waiting { color: var(--el-text-color-secondary); }
 
 .setup-actions {
   display: flex;

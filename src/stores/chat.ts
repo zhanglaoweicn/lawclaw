@@ -740,8 +740,8 @@ export const useChatStore = defineStore('chat', () => {
         const errMsg = e instanceof Error ? e.message : '未知错误'
         msgs[idx] = {
           ...msgs[idx],
-          content: errMsg === 'Backend not connected'
-            ? '后端未连接，请确保 LawClaw 引擎已启动并配置了 API Key。'
+          content: (errMsg === 'Backend not connected' || errMsg.includes('启动中'))
+            ? '后端引擎尚未就绪（启动通常需要 10–30 秒）。请稍候重试；若持续失败，请查看安装目录下的 launcher.log。'
             : `请求失败：${errMsg}`,
           error: true,
         }

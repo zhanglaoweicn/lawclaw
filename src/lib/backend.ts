@@ -212,11 +212,15 @@ export class BackendClient {
     if (!this.ws || this.ws.readyState === WebSocket.CLOSED) {
       this.connect().catch(() => {})
     }
-    for (let i = 0; i < 50; i++) {
+    // 后端是捆绑的 Python 运行时，从进程启动到 WebSocket 可连通常要 8–30 秒：首次启动要解压、
+    // 导入整套 hermes 栈；配置了元典 Key 时还会做 MCP 发现（走网络）。原来只等 10 秒，
+    // 用户在启动过程中点「测试连接」就会看到「后端引擎未启动」这种误导性提示
+    // （实测本机后端 8.0 秒才监听、webview 8.3 秒才连上，正好卡在 10 秒边界内）。
+    for (let i = 0; i < 200; i++) {          // 40s
       await new Promise(r => setTimeout(r, 200))
       if (this.connected) return
     }
-    throw new Error('后端未连接，请确保 LawClaw 引擎已启动并配置了 API Key。')
+    throw new Error('后端引擎仍在启动中（首次启动约 10–30 秒）。请稍候重试；若持续失败，请查看安装目录下的 launcher.log。')
   }
 
   async initialize(): Promise<{ status: string; version: string; name: string }> {

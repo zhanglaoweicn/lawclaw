@@ -20,10 +20,13 @@ import { useUiStore } from '../stores/ui'
 import { useChatStore } from '../stores/chat'
 import { useMatterStore } from '../stores/matter'
 import { useCaseViewStore } from '../stores/caseView'
+import { backend } from '../lib/backend'
 
 export type BootstrapPhase =
   | 'idle'
   | 'check-setup'
+  | 'engine-wait'      // 先把后端引擎等起来，再进配置向导 / 主界面
+  | 'engine-failed'    // 预算内没起来 → 给用户明确的「重试 / 离线继续」选择
   | 'setup-wizard'
   | 'loading'
   | 'ready'
@@ -124,8 +127,20 @@ function _createBootstrap() {
     _setTarget(2, '检查用户配置…')
     await _delay(180)  // 给 Splash 品牌渐显预留一点时间
 
+    // Step 1: 先把后端引擎等起来。
+    // 引擎是捆绑的 Python 进程，首次启动要解压/导入整套栈，通常 10–30 秒。以前直接进配置
+    // 向导（P2 只等 2.5 秒就"降级"），用户会先看到配置页、点「测试连接」却得到
+    // 「后端引擎未启动」——顺序反了。现在引擎就绪才继续，起不来则给出明确的重试入口。
+    const engineOk = await _waitForEngine()
+    if (!engineOk) {
+      state.phase = 'engine-failed'
+      state.warning = '后端引擎启动超时'
+      _clearDeadline()
+      return
+    }
+
     if (!setupStore.isComplete) {
-      // 交给外层显示 SetupWizard
+      // 交给外层显示 SetupWizard（此时引擎已可用，「测试连接」开箱即通）
       state.phase = 'setup-wizard'
       _setTarget(5, '等待配置完成…')
       _tryHideMicroSplash()  // ══ CRITICAL：解锁 #app visibility，让 SetupWizard 真正可见！
@@ -136,6 +151,36 @@ function _createBootstrap() {
 
     // 配置已完整 → 进入正式加载
     await _runLoadingPipeline()
+  }
+
+  /* ── 等后端引擎就绪（WS 连上且能应答 ping）── */
+  const ENGINE_BUDGET_MS = 120_000
+  async function _waitForEngine(): Promise<boolean> {
+    const chat = useChatStore()
+    if (chat.connected) { state.backendOnline = true; return true }
+    state.phase = 'engine-wait'
+    state.backendOnline = null
+    _resetDeadline(ENGINE_BUDGET_MS + 15_000)   // 引擎等待期间放宽兜底超时
+    const t0 = Date.now()
+    while (Date.now() - t0 < ENGINE_BUDGET_MS) {
+      const held = Math.round((Date.now() - t0) / 1000)
+      _setTarget(
+        Math.min(54, 4 + (Date.now() - t0) / ENGINE_BUDGET_MS * 50),
+        `正在启动后端引擎…（首次启动约 10–30 秒，已等待 ${held} 秒）`,
+      )
+      try { await chat.connectBackend() } catch { /* 继续等 */ }
+      if (chat.connected) {
+        // 不只是端口开着：真的打一次 RPC，确认引擎可应答
+        try {
+          await backend.call('ping', {})
+          state.backendOnline = true
+          return true
+        } catch { /* 还没准备好，继续等 */ }
+      }
+      await _delay(800)
+    }
+    state.backendOnline = false
+    return false
   }
 
   /* ── Wizard 完成回调 → 继续进入加载阶段 ── */
@@ -263,5 +308,12 @@ function _createBootstrap() {
     start,
     onSetupWizardDone,
     skipToMain,
+    /** 引擎启动失败后，用户点「重试」→ 重新走一遍启动编排 */
+    retryEngine: start,
+    /** 引擎起不来但用户想先用本地功能（案件/日程/文书本地可用，对话与检索受限） */
+    continueOffline: () => {
+      state.warning = '已按离线模式继续：后端引擎未运行，对话与法律检索不可用'
+      skipToMain()
+    },
   }
 }

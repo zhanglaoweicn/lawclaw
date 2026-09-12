@@ -97,8 +97,9 @@ export function useSettingsForm() {
       return false
     } catch (e: any) {
       const msg = e?.message || '连接失败'
-      if (msg.includes('not connected') || msg.includes('未连接')) {
-        ElMessage.warning('LawClaw 后端引擎未启动，请先启动引擎')
+      // 引擎（捆绑 Python 后端）启动通常要 8–30 秒；把「还没连上」讲清楚，别让用户以为坏了。
+      if (msg.includes('not connected') || msg.includes('未连接') || msg.includes('启动中')) {
+        ElMessage.warning('后端引擎正在启动（首次启动约 10–30 秒），请稍候再试一次')
       } else {
         ElMessage.error(`连接失败: ${msg}`)
       }

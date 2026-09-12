@@ -10,7 +10,9 @@
       :leaving="splashLeaving"
     />
 
-    <!-- B. 首次使用：SetupWizard 独占全屏（用户填完配置 → 继续进入加载 → 主界面） -->
+    <!-- B. 首次使用：SetupWizard 独占全屏（用户填完配置 → 继续进入加载 → 主界面）
+         注意：进入本阶段前 bootstrap 已确认后端引擎可应答（engine-wait），
+         所以「测试连接」不会撞上"引擎还没起来"。 -->
     <SetupWizard
       v-else-if="bootstrap.state.phase === 'setup-wizard'"
       key="wizard"
@@ -249,6 +251,25 @@
       </div>
     </div>
   </el-dialog>
+
+  <!-- D. 引擎启动失败：给出明确出路（重试 / 离线继续），而不是把用户丢进一个用不了的界面 -->
+  <div
+    v-if="bootstrap.state.phase === 'engine-failed'"
+    class="engine-failed-overlay"
+    role="alertdialog"
+    aria-modal="true"
+  >
+    <div class="engine-failed-card">
+      <div class="ef-icon">&#x26A0;</div>
+      <h3>后端引擎启动超时</h3>
+      <p>LawClaw 的本地引擎（捆绑 Python 运行时）在等待时间内没有应答。常见原因：首次启动较慢、安全软件拦截、或安装目录不可写。</p>
+      <p class="ef-hint">诊断记录：安装目录下的 <code>launcher.log</code>（含后端拉起时间与失败原因）。</p>
+      <div class="ef-actions">
+        <el-button type="primary" @click="bootstrap.retryEngine()">重试启动引擎</el-button>
+        <el-button text @click="bootstrap.continueOffline()">仍然继续（离线：案件/日程可用，对话与检索不可用）</el-button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -926,5 +947,58 @@ html, body, #app { margin:0; padding:0; height:100%; overflow:hidden; }
 [data-theme="dark"] #app > .setup-wizard,
 [data-theme="dark"] #app > div > .setup-wizard {
   background: radial-gradient(1200px 800px at 15% -10%, #121a2b 0%, #0d1117 55%, #06090f 100%);
+}
+
+/* ── 引擎启动失败面板（覆盖在 Splash 之上） ── */
+.engine-failed-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 9, 15, 0.72);
+  backdrop-filter: blur(4px);
+  padding: 24px;
+}
+.engine-failed-card {
+  width: min(560px, 100%);
+  background: var(--lc-surface, #fff);
+  color: var(--lc-text, #1a2333);
+  border: 1px solid var(--lc-border, rgba(26, 39, 68, 0.12));
+  border-radius: 14px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+  padding: 26px 28px;
+  text-align: left;
+}
+.engine-failed-card h3 {
+  margin: 8px 0 10px;
+  font-size: 18px;
+  font-weight: 600;
+}
+.engine-failed-card p {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--lc-text-2, #4a5568);
+}
+.engine-failed-card code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(26, 39, 68, 0.08);
+}
+.engine-failed-card .ef-icon {
+  font-size: 26px;
+  line-height: 1;
+  color: var(--el-color-warning);
+}
+.engine-failed-card .ef-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 18px;
+  flex-wrap: wrap;
 }
 </style>

@@ -1,0 +1,40 @@
+# 统一换行符，避免跨平台 diff 噪声（本项目主要在 Windows 上开发）
+* text=auto eol=lf
+
+# 明确的文本类型
+*.py   text eol=lf
+*.ts   text eol=lf
+*.vue  text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.yaml text eol=lf
+*.yml  text eol=lf
+*.toml text eol=lf
+*.css  text eol=lf
+*.html text eol=lf
+
+# Windows 专用脚本保留 CRLF
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+# 二进制（不要做任何转换，也不要尝试 diff）
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.icns binary
+*.pdf  binary
+*.docx binary
+*.xlsx binary
+*.dll  binary
+*.exe  binary
+*.so   binary
+*.pyd  binary
+
+# 让 GitHub 语言统计更贴近实际（技能/清单等生成物不计入）
+skills/**         linguist-documentation
+backend/.hermes/skills/** linguist-documentation
+COMPAT_MANIFEST.md linguist-generated
+compat_manifest.json linguist-generated

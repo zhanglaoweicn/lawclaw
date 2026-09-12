@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LawClaw 律爪 — 律师智能体</title>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         CRITICAL SPLASH CSS（首帧即可见，零依赖，杜绝 WebView 白屏一闪）
+         ‧ 与 Vue 级 SplashScreen.vue 配色 100% 对称（Navy + Gold）
+         ‧ 亮 / 暗两套：由 <html data-theme> 驱动，theme 在下方 <script> 同步读 localStorage 设置
+         ‧ prefers-reduced-motion 全量禁用动画
+         ════════════════════════════════════════════════════════════════ -->
+    <style id="critical-splash-css">
+      /* ----- reset: 首帧 0 padding / 0 margin 不溢出 ----- */
+      html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+      html { background: #06090f; }   /* 极端早：WebView 还没解析 body 前给个默认深底，防系统级白闪 */
+
+      /* ----- 颜色变量（与 legal-theme.css / SplashScreen.vue 的语义一致） ----- */
+      :root {
+        --sm-bg-0: #e9ecf3;
+        --sm-bg-1: #f7f8fb;
+        --sm-accent: #c9a84c;
+        --sm-accent-soft: rgba(201, 168, 76, 0.28);
+        --sm-accent-glow: rgba(201, 168, 76, 0.5);
+        --sm-text-1: #1a2744;
+        --sm-text-2: #4c5a78;
+        --sm-text-muted: #8a96b1;
+        --sm-grid: rgba(26, 39, 68, 0.06);
+      }
+      [data-theme="dark"] {
+        --sm-bg-0: #06090f;
+        --sm-bg-1: #0d1117;
+        --sm-accent: #e0b652;
+        --sm-accent-soft: rgba(224, 182, 82, 0.24);
+        --sm-accent-glow: rgba(224, 182, 82, 0.55);
+        --sm-text-1: #e8ecf5;
+        --sm-text-2: #a8b3cf;
+        --sm-text-muted: #5d6887;
+        --sm-grid: rgba(232, 236, 245, 0.05);
+      }
+
+      /* ----- #app 在进入 main phase 前保持不可见（避免中间态 flash），由 JS 在 main 阶段解锁 ----- */
+      #app { visibility: hidden; height: 100%; }
+      #app.is-ready { visibility: visible; }
+
+      /* ----- 微 Splash：固定全屏，最高 z-index，首帧就绘制 ----- */
+      #splash-micro {
+        position: fixed; inset: 0; z-index: 99999;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background:
+          radial-gradient(1200px 700px at 20% 0%, var(--sm-bg-1) 0%, var(--sm-bg-0) 60%, #e5e8f0 100%);
+        color: var(--sm-text-1);
+        opacity: 1; visibility: visible;
+        transition: opacity 420ms cubic-bezier(0.4, 0, 0.2, 1),
+                    visibility 420ms step-end,
+                    transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+                     'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      }
+      [data-theme="dark"] #splash-micro {
+        background:
+          radial-gradient(1200px 800px at 15% -10%, #121a2b 0%, var(--sm-bg-1) 55%, var(--sm-bg-0) 100%);
+      }
+      /* leaving 淡出类（Vue phase==='main' → main.js 注入） */
+      #splash-micro.is-hidden {
+        opacity: 0; visibility: hidden; pointer-events: none;
+        transform: translateY(-10px) scale(0.998);
+      }
+
+      /* 背景装饰：几何网格 + 双角光晕 + 暗角（纯CSS，零图片） */
+      #sm-bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+      #sm-bg__grid {
+        position: absolute; inset: -20%;
+        background-image:
+          linear-gradient(var(--sm-grid) 1px, transparent 1px),
+          linear-gradient(90deg, var(--sm-grid) 1px, transparent 1px);
+        background-size: 44px 44px;
+        mask-image: radial-gradient(ellipse at center, #000 45%, transparent 85%);
+        -webkit-mask-image: radial-gradient(ellipse at center, #000 45%, transparent 85%);
+        opacity: 0.9;
+        transform: perspective(900px) rotateX(56deg) translateY(-10%);
+        transform-origin: 50% 30%;
+        animation: sm-grid-drift 18s linear infinite;
+      }
+      @keyframes sm-grid-drift {
+        from { background-position: 0 0, 0 0; }
+        to   { background-position: 0 132px, 132px 0; }
+      }
+      #sm-bg__glow-tl, #sm-bg__glow-br {
+        position: absolute; width: 520px; height: 520px; border-radius: 50%;
+        filter: blur(90px); opacity: 0.65;
+      }
+      #sm-bg__glow-tl {
+        top: -180px; left: -160px;
+        background: radial-gradient(circle, var(--sm-accent-soft) 0%, transparent 70%);
+        animation: sm-glow-breathe 7s ease-in-out infinite alternate;
+      }
+      #sm-bg__glow-br {
+        bottom: -200px; right: -180px;
+        background: radial-gradient(circle, rgba(106, 144, 192, 0.22) 0%, transparent 70%);
+        animation: sm-glow-breathe 9s ease-in-out -3s infinite alternate;
+      }
+      @keyframes sm-glow-breathe {
+        from { opacity: 0.45; transform: scale(0.96); }
+        to   { opacity: 0.80; transform: scale(1.06); }
+      }
+      #sm-bg__vignette {
+        position: absolute; inset: 0;
+        background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.18) 100%);
+      }
+      [data-theme="dark"] #sm-bg__vignette {
+        background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%);
+      }
+
+      /* 品牌 */
+      #sm-brand {
+        position: relative; z-index: 1;
+        display: flex; flex-direction: column; align-items: center; gap: 18px;
+        opacity: 0; transform: translateY(12px);
+        animation: sm-brand-in 720ms cubic-bezier(0.22, 1, 0.36, 1) 60ms forwards;
+      }
+      @keyframes sm-brand-in { to { opacity: 1; transform: translateY(0); } }
+
+      #sm-icon {
+        position: relative; color: var(--sm-accent); width: 84px; height: 84px;
+        display: flex; align-items: center; justify-content: center;
+        filter: drop-shadow(0 4px 22px var(--sm-accent-soft));
+      }
+      #sm-icon svg { width: 72px; height: 72px; }
+      #sm-ring {
+        stroke: currentColor; stroke-width: 1.6; fill: none;
+        stroke-dasharray: 260; stroke-dashoffset: 260;
+        animation: sm-ring-draw 1100ms cubic-bezier(0.65, 0, 0.35, 1) 120ms forwards;
+      }
+      @keyframes sm-ring-draw { to { stroke-dashoffset: 0; } }
+      #sm-scale {
+        opacity: 0; transform-origin: 50% 50%;
+        transform: translateY(2px) scale(0.92);
+        animation: sm-scale-in 620ms cubic-bezier(0.22, 1, 0.36, 1) 680ms forwards;
+        stroke: currentColor; fill: none;
+      }
+      @keyframes sm-scale-in { to { opacity: 1; transform: translateY(0) scale(1); } }
+
+      #sm-pulse {
+        position: absolute; right: 10px; bottom: 10px;
+        width: 9px; height: 9px; border-radius: 50%;
+        background: var(--sm-accent);
+        box-shadow: 0 0 0 0 var(--sm-accent-glow);
+        animation: sm-pulse 2.1s ease-out infinite;
+      }
+      @keyframes sm-pulse {
+        0%   { box-shadow: 0 0 0 0 var(--sm-accent-glow); opacity: 0.95; }
+        70%  { box-shadow: 0 0 0 14px rgba(201, 168, 76, 0); opacity: 0.95; }
+        100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0); opacity: 0; }
+      }
+
+      #sm-text { text-align: center; }
+      #sm-title {
+        margin: 0; padding: 0;
+        font-size: 34px; font-weight: 700; letter-spacing: 0.02em;
+        color: var(--sm-text-1); line-height: 1.1;
+      }
+      #sm-dot { color: var(--sm-accent); margin: 0 2px; font-weight: 600; }
+      #sm-zh  { color: var(--sm-accent); font-weight: 600; margin-left: 2px; }
+      #sm-sub {
+        margin: 8px 0 0; padding: 0;
+        font-size: 14px; letter-spacing: 0.12em;
+        color: var(--sm-text-2);
+      }
+
+      /* 进度条（等 Vue 挂好后会同步平滑进度，在此之前显示 2% 的金色 "启动中…"） */
+      #sm-progress {
+        position: relative; z-index: 1;
+        width: 460px; max-width: 82vw;
+        display: flex; align-items: center; gap: 14px;
+        margin-top: 44px;
+      }
+      #sm-track {
+        flex: 1; height: 5px; border-radius: 999px;
+        background: rgba(26, 39, 68, 0.10);
+        overflow: hidden; position: relative; backdrop-filter: blur(2px);
+      }
+      [data-theme="dark"] #sm-track { background: rgba(255,255,255,0.07); }
+      #sm-fill {
+        position: absolute; top:0; left:0; bottom:0; width: 3%;
+        background: linear-gradient(90deg, #a8882e 0%, var(--sm-accent) 45%, var(--sm-accent-glow) 85%, #e0c878 100%);
+        border-radius: 999px;
+        box-shadow: 0 0 14px var(--sm-accent-soft);
+        transition: width 180ms linear;
+        /* 初始态先自动跑一段（从 3% 到 8%），让用户感受到"已在加载"，等 Vue 接上后同步进度 */
+        animation: sm-fill-predo 900ms cubic-bezier(0.22, 1, 0.36, 1) 900ms forwards;
+      }
+      @keyframes sm-fill-predo { from { width: 3%; } to { width: 8%; } }
+
+      #sm-percent {
+        font-variant-numeric: tabular-nums;
+        font-size: 13px; font-weight: 600; letter-spacing: 0.02em;
+        color: var(--sm-text-2); min-width: 36px; text-align: right;
+      }
+
+      #sm-status {
+        position: relative; z-index: 1;
+        margin: 16px 0 0; min-height: 22px;
+        font-size: 13px; color: var(--sm-text-2); letter-spacing: 0.04em;
+        opacity: 0; animation: sm-status-in 360ms ease-out 1100ms forwards;
+      }
+      @keyframes sm-status-in { from { opacity: 0; transform: translateY(4px);} to { opacity: 1; transform: translateY(0);} }
+
+      #sm-footer {
+        position: absolute; left: 0; right: 0; bottom: 22px;
+        display: flex; justify-content: center; align-items: center; gap: 8px;
+        font-size: 12px; color: var(--sm-text-muted); letter-spacing: 0.02em;
+      }
+      #sm-footer-sep { opacity: 0.5; }
+
+      /* 响应式 < 480px */
+      @media (max-width: 480px) {
+        #sm-icon { width: 68px; height: 68px; }
+        #sm-icon svg { width: 58px; height: 58px; }
+        #sm-title { font-size: 26px; }
+        #sm-sub { font-size: 12.5px; letter-spacing: 0.08em; }
+        #sm-footer { font-size: 11px; bottom: 16px; }
+      }
+
+      /* prefers-reduced-motion：所有关键帧禁用，保证无障碍 */
+      @media (prefers-reduced-motion: reduce) {
+        #sm-bg__grid, #sm-bg__glow-tl, #sm-bg__glow-br,
+        #sm-brand, #sm-ring, #sm-scale, #sm-pulse, #sm-fill, #sm-status {
+          animation: none !important;
+        }
+        #sm-ring  { stroke-dashoffset: 0; }
+        #sm-scale { opacity: 1; transform: none; }
+        #sm-fill  { transition: width 60ms linear; width: 12%; }
+      }
+    </style>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         SYNC THEME SETUP（必须同步执行，在任何 CSS/JS 之前读 localStorage，避免"亮暗跳变"）
+         ════════════════════════════════════════════════════════════════ -->
+    <script id="theme-preinit">
+      (function () {
+        try {
+          var t = localStorage.getItem('lawclaw_theme');
+          if (!t) {
+            // 无显式偏好：跟随系统 prefers-color-scheme
+            t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
+        } catch (e) { /* localStorage 不可达也不致命 */ }
+      })();
+    </script>
+  </head>
+  <body>
+    <!-- ════════════════════════════════════════════════════════════════
+         微 Splash：首帧可见，零依赖（Critical CSS 已定义样式，SVG 内嵌无外链）
+         进入 main phase 后由 App.vue → main.js → window.__hideLawClawSplash() 淡出移除
+         ════════════════════════════════════════════════════════════════ -->
+    <div id="splash-micro" aria-hidden="false" role="status" aria-label="LawClaw 正在启动">
+      <div id="sm-bg" aria-hidden="true">
+        <div id="sm-bg__grid"></div>
+        <div id="sm-bg__glow-tl"></div>
+        <div id="sm-bg__glow-br"></div>
+        <div id="sm-bg__vignette"></div>
+      </div>
+
+      <div id="sm-brand">
+        <div id="sm-icon" aria-hidden="true">
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle id="sm-ring" cx="32" cy="32" r="30"></circle>
+            <g id="sm-scale" transform="translate(0, -1)">
+              <path d="M32 14 L32 50" stroke-width="2.4" stroke-linecap="round"/>
+              <path d="M18 22 L46 22" stroke-width="2.4" stroke-linecap="round"/>
+              <path d="M14 22 L22 22 L18 32 Z" stroke-width="2" stroke-linejoin="round"/>
+              <path d="M42 22 L50 22 L46 32 Z" stroke-width="2" stroke-linejoin="round"/>
+              <path d="M22 50 L42 50" stroke-width="2.8" stroke-linecap="round"/>
+            </g>
+          </svg>
+          <span id="sm-pulse" aria-hidden="true"></span>
+        </div>
+        <div id="sm-text">
+          <h1 id="sm-title">LawClaw<span id="sm-dot">·</span><span id="sm-zh">律爪</span></h1>
+          <p id="sm-sub">AI 驱动的律师智能工作台</p>
+        </div>
+      </div>
+
+      <div id="sm-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="8">
+        <div id="sm-track">
+          <div id="sm-fill"></div>
+        </div>
+        <span id="sm-percent">03%</span>
+      </div>
+
+      <p id="sm-status">正在启动…</p>
+
+      <div id="sm-footer">
+        <span>Version 0.1.0</span>
+        <span id="sm-footer-sep">·</span>
+        <span>© LawClaw · 为中国律师打造</span>
+      </div>
+    </div>
+
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         Bridge API：供 Vue 级启动编排同步"进度 / 状态 / 进入主界面"，
+         让 #splash-micro 与 SplashScreen.vue 视觉上完全同步。
+         ════════════════════════════════════════════════════════════════ -->
+    <script id="splash-bridge">
+      (function (w) {
+        var $ = function (id) { return document.getElementById(id); };
+        var fillEl, percentEl, statusEl, microEl, appEl;
+        function ref() {
+          fillEl = fillEl || $('sm-fill');
+          percentEl = percentEl || $('sm-percent');
+          statusEl = statusEl || $('sm-status');
+          microEl = microEl || $('splash-micro');
+          appEl = appEl || $('app');
+        }
+        // progress(0..100, '当前阶段文字') — 与 useAppBootstrap state.progress/statusText 对齐
+        w.__lawclawSplashProgress = function (p, text) {
+          ref(); if (!fillEl) return;
+          var v = Math.max(0, Math.min(100, Math.round(p || 0)));
+          fillEl.style.width = v + '%';
+          if (percentEl) {
+            percentEl.textContent = (v < 10 ? '0' : '') + v + '%';
+          }
+          if (statusEl && typeof text === 'string' && text && statusEl.textContent !== text) {
+            statusEl.textContent = text;
+            // 换文字触发淡入重放（key 机制模拟：重写 animation）
+            statusEl.style.animation = 'none';
+            // eslint-disable-next-line no-unused-expressions
+            statusEl.offsetHeight;  /* force reflow */
+            statusEl.style.animation = '';
+          }
+          var bar = $('sm-progress');
+          if (bar) bar.setAttribute('aria-valuenow', String(v));
+        };
+        // enterMain() → 淡出微 Splash + 解锁 #app 可见性
+        w.__hideLawClawSplash = function () {
+          ref();
+          if (appEl) appEl.classList.add('is-ready');
+          if (microEl) {
+            microEl.classList.add('is-hidden');
+            microEl.setAttribute('aria-hidden', 'true');
+            // 淡出完成（420ms）后从 DOM 彻底移除，释放资源
+            setTimeout(function () {
+              if (microEl && microEl.parentNode) microEl.parentNode.removeChild(microEl);
+              var cssTag = $('critical-splash-css');
+              if (cssTag && cssTag.parentNode) cssTag.parentNode.removeChild(cssTag);
+              var bridgeTag = $('splash-bridge');
+              if (bridgeTag && bridgeTag.parentNode) bridgeTag.parentNode.removeChild(bridgeTag);
+              var preinitTag = $('theme-preinit');
+              if (preinitTag && preinitTag.parentNode) { /* preinit 保留（体积很小，仅读 theme） */ }
+              delete w.__lawclawSplashProgress;
+              delete w.__hideLawClawSplash;
+            }, 520);
+          }
+        };
+      })(window);
+    </script>
+  </body>
+</html>

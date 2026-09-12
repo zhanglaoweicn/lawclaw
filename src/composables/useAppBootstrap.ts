@@ -163,10 +163,11 @@ function _createBootstrap() {
     _resetDeadline(ENGINE_BUDGET_MS + 15_000)   // 引擎等待期间放宽兜底超时
     const t0 = Date.now()
     while (Date.now() - t0 < ENGINE_BUDGET_MS) {
-      const held = Math.round((Date.now() - t0) / 1000)
+      // 状态文案保持恒定：带秒数的文案每 800ms 变一次，会反复触发 splash 的淡入动画（闪烁）。
+      // 进度条本身在动，已足够表达"在推进"。
       _setTarget(
         Math.min(54, 4 + (Date.now() - t0) / ENGINE_BUDGET_MS * 50),
-        `正在启动后端引擎…（首次启动约 10–30 秒，已等待 ${held} 秒）`,
+        '正在启动后端引擎…（首次启动约 10–30 秒，请稍候）',
       )
       try { await chat.connectBackend() } catch { /* 继续等 */ }
       if (chat.connected) {

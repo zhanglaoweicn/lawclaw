@@ -2,8 +2,26 @@
 
 面向中国执业律师的桌面 AI 智能体。基于 [Hermes-agent](https://github.com/NousResearch/hermes-agent) 二次开发。
 
-> **想研究本项目**：先读 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)（分层与数据流），
-> 再看 [AGENTS.md](AGENTS.md)（完整过程日志：决策、踩坑、实测记录，信息量最大）。
+## 快速开始（三条路）
+
+| 我想… | 怎么做 | 需要预装 |
+|---|---|---|
+| **直接用** | 到 [Releases](../../releases) 下载 `LawClaw_x.y.z_x64-setup.exe` 安装 | 无（安装包已内嵌 Python 运行时） |
+| **免安装/拷 U 盘** | 解压 `portable-*.zip`，双击目录里的 `LawClaw.exe` | 无 |
+| **改代码 / 自己打包** | 见 [docs/DEPLOY.md](docs/DEPLOY.md) 的方式 C 与 D | Python ≥3.11、Node ≥18、pnpm（打包另需 Rust + MinGW） |
+
+首次启动会进配置向导：填 **API 地址 / 模型 / API Key**（任意 OpenAI 兼容端点）→ 点「测试连接」→ 完成。
+法规/案例检索需要另配元典开放平台的 Key（写入 `backend/.env` 的 `YUANDIAN_API_KEY`），不配也能用其余功能。
+
+## 文档
+
+| 文档 | 内容 |
+|---|---|
+| [docs/DEPLOY.md](docs/DEPLOY.md) | 部署与运行：四种方式、源码打包双风味、配置项、常见问题 |
+| [docs/DATA_PRIVACY.md](docs/DATA_PRIVACY.md) | 数据存哪、什么内容会发往第三方、凭证如何存、演示数据声明 |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 分层与数据流：想读代码先看这个 |
+| [AGENTS.md](AGENTS.md) | 完整过程日志：决策、踩坑、实测记录（信息量最大） |
+| [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) | 第三方组件与内容署名、许可合规 |
 
 ## 项目结构
 

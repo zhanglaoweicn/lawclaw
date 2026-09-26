@@ -43,15 +43,15 @@ https://open.chineselaw.com/，支持邮箱 yuandianzonghe@thunisoft.com）。
 从对话上下文中获取用户的查询需求，无需用户重复输入。分析用户的需求，确定检索策略：
 
 **精确查询**（已知条款位置）：
-- 用户提供了法规名称 + 条款号 → 直接调用 `legal_research.fetch_law`（对应元典 `yuandian_rh_ft_detail`）。
-- 用户提供了法规名称但未指定条款 → 调用 `legal_research.search_laws`（对应 `yuandian_rh_ft_search`）或 `yuandian_rh_fg_detail` 获取全文。
+- 用户提供了法规名称 + 条款号 → 直接调用 `legal_research.fetch_law`（对应元典 `yuandian_get_legal_article_detail`）。
+- 用户提供了法规名称但未指定条款 → 调用 `legal_research.search_laws`（对应 `yuandian_search_legal_articles`）或 `yuandian_get_law_or_regulation_detail` 获取全文。
 
 **主题检索**（需要按内容查找）：
 - 提炼核心关键词（如"纳税义务发生时间""违约金调整""股东知情权"）。
 - 确定筛选条件：`sxx="现行有效"`（默认优先），`xljb_1` 效力级别。
 
 **比较检索**（多法规对比）：
-- 优先使用语义检索 `yuandian_law_vector_search` 发现跨法规相关条文。
+- 优先使用语义检索 `yuandian_semantic_search_legal_articles` 发现跨法规相关条文。
 
 ## 第二步：执行检索
 
@@ -59,12 +59,12 @@ https://open.chineselaw.com/，支持邮箱 yuandianzonghe@thunisoft.com）。
 
 | 场景 | 首选 MCP 工具 | 补充工具 |
 |------|--------------|----------|
-| 已知法规名称 + 条款号 | `yuandian_rh_ft_detail` | `yuandian_rh_fg_detail` 查上下文 |
-| 已知法规名称，找相关条款 | `yuandian_rh_ft_search`（fgmc=法规名） | `yuandian_rh_fg_detail` |
-| 主题关键词检索 | `yuandian_rh_ft_search`（sxx=现行有效） | `yuandian_law_vector_search` |
-| 关键词检索结果 < 3 条相关条文 | `yuandian_law_vector_search` | — |
-| 跨法规比较 / 模糊描述 | `yuandian_law_vector_search` | `yuandian_rh_ft_search` |
-| 需要法规完整上下文 | `yuandian_rh_fg_detail` | — |
+| 已知法规名称 + 条款号 | `yuandian_get_legal_article_detail` | `yuandian_get_law_or_regulation_detail` 查上下文 |
+| 已知法规名称，找相关条款 | `yuandian_search_legal_articles`（fgmc=法规名） | `yuandian_get_law_or_regulation_detail` |
+| 主题关键词检索 | `yuandian_search_legal_articles`（sxx=现行有效） | `yuandian_semantic_search_legal_articles` |
+| 关键词检索结果 < 3 条相关条文 | `yuandian_semantic_search_legal_articles` | — |
+| 跨法规比较 / 模糊描述 | `yuandian_semantic_search_legal_articles` | `yuandian_search_legal_articles` |
+| 需要法规完整上下文 | `yuandian_get_law_or_regulation_detail` | — |
 
 ### 关键词检索 vs 语义检索使用原则
 
@@ -74,22 +74,22 @@ https://open.chineselaw.com/，支持邮箱 yuandianzonghe@thunisoft.com）。
 
 ### MCP 工具说明
 
-**`yuandian_rh_ft_search`** — 法条关键词检索
+**`yuandian_search_legal_articles`** — 法条关键词检索
 - 参数：`keyword`（必填）、`sxx`（时效性，默认"现行有效"）、`xljb_1`（效力级别）、`fgmc`（法规名过滤）、`top_k`（默认 10）。
 - 返回：法条列表，每条含 `llm_content`（格式：`"- 《法规名》条款号##内容"`）。
 
-**`yuandian_rh_ft_detail`** — 法条详情
+**`yuandian_get_legal_article_detail`** — 法条详情
 - 参数：`fgmc`（法规名）+ `ftnum`（条款号，如"第一百条"），或 `id`。
 - 返回：法条原文、时效状态、效力级别、发布日期。
 
-**`yuandian_law_vector_search`** — 法条语义检索
+**`yuandian_semantic_search_legal_articles`** — 法条语义检索
 - 参数：`query`（自然语言描述）、`sxx`（列表，如 `["现行有效"]`）、`return_num`（默认 20）。
 - 返回：按语义相似度排序的法条列表，每条含 `score`。
 
-**`yuandian_rh_fg_search`** — 法规关键词检索
+**`yuandian_search_laws_and_regulations`** — 法规关键词检索
 - 参数：`keyword`、`sxx`、`xljb_1`、`top_k`。
 
-**`yuandian_rh_fg_detail`** — 法规全文
+**`yuandian_get_law_or_regulation_detail`** — 法规全文
 - 参数：`fgmc`（法规名）或 `id`，可选 `refer_date`（参考日期）。
 
 ## 第三步：输出结果

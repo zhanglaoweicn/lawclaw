@@ -2,10 +2,20 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Matter, MatterStage, DeadlineItem, DeadlineType } from '../types/legal'
 import {
-  STAGE_COLORS, STAGE_TAG_TYPES, stageColor, stageTagType, ALL_STAGES, STAGE_TRANSITIONS,
-  suggestRiskLevel, PRACTICE_AREA_TO_CASE_TYPE,
-  isPartyMatch, type ConflictMatch, type ConflictLevel,
-  generateDeadlineId, getNearestDeadline, getActiveDeadlines,
+  STAGE_COLORS,
+  STAGE_TAG_TYPES,
+  stageColor,
+  stageTagType,
+  ALL_STAGES,
+  STAGE_TRANSITIONS,
+  suggestRiskLevel,
+  PRACTICE_AREA_TO_CASE_TYPE,
+  isPartyMatch,
+  type ConflictMatch,
+  type ConflictLevel,
+  generateDeadlineId,
+  getNearestDeadline,
+  getActiveDeadlines,
 } from '../lib/caseConstants'
 
 const MATTERS_KEY = 'lawclaw_matters'
@@ -43,7 +53,7 @@ function migrateMatter(m: any): Matter {
     }
     // 推断 caseCause：基于 practiceArea（粗略映射）
     if (!migrated.caseCause && migrated.practiceArea) {
-      migrated.caseCause = migrated.practiceArea  // 临时使用 practiceArea 作为 caseCause
+      migrated.caseCause = migrated.practiceArea // 临时使用 practiceArea 作为 caseCause
     }
     // 推断 riskLevel
     if (!migrated.riskLevel) {
@@ -92,7 +102,7 @@ function loadMatters(): Matter[] {
   try {
     const raw = localStorage.getItem(MATTERS_KEY)
     if (raw) {
-      const parsed = JSON.parse(raw, (k, v) => k === 'createdAt' || k === 'updatedAt' ? new Date(v) : v)
+      const parsed = JSON.parse(raw, (k, v) => (k === 'createdAt' || k === 'updatedAt' ? new Date(v) : v))
       // 迁移旧数据
       return (Array.isArray(parsed) ? parsed : []).map(migrateMatter)
     }
@@ -151,17 +161,21 @@ export const useMatterStore = defineStore('matter', () => {
     // 若 form.deadline 存在但 deadlines[] 未提供，自动转换（向后兼容快捷输入）
     let deadlines = m.deadlines
     if (!deadlines && m.deadline) {
-      deadlines = [{
-        id: generateDeadlineId(),
-        type: 'evidence' as DeadlineType,
-        date: m.deadline,
-        note: '创建案件时快捷输入的截止日期',
-        completed: false,
-        createdAt: now.toISOString(),
-      }]
+      deadlines = [
+        {
+          id: generateDeadlineId(),
+          type: 'evidence' as DeadlineType,
+          date: m.deadline,
+          note: '创建案件时快捷输入的截止日期',
+          completed: false,
+          createdAt: now.toISOString(),
+        },
+      ]
     }
-    if (m.courtDate && deadlines) {
-      // 若 courtDate 存在且 deadlines 中没有 court-date 类型，自动添加
+    if (m.courtDate) {
+      // 只要填了开庭日期就进 deadlines[]（旧版 deadlines 为 undefined 时整段跳过，
+      // 导致只录开庭日的案件不触发任何期限提醒、不进工作台紧急列表）
+      deadlines = deadlines || []
       const hasCourtDate = deadlines.find(d => d.type === 'court-date')
       if (!hasCourtDate) {
         deadlines.push({
@@ -177,7 +191,9 @@ export const useMatterStore = defineStore('matter', () => {
     const matter: Matter = {
       ...m,
       deadlines,
-      id: generateId(), createdAt: now, updatedAt: now,
+      id: generateId(),
+      createdAt: now,
+      updatedAt: now,
       schemaVersion: CURRENT_SCHEMA_VERSION,
       // 若未指定风险等级，根据标的额自动建议
       riskLevel: m.riskLevel || suggestRiskLevel(m.claimAmount, m.caseType),
@@ -255,7 +271,6 @@ export const useMatterStore = defineStore('matter', () => {
     activeMatterId.value = id
   }
 
-
   function addCategory(matterId: string, category: string) {
     const m = matters.value.find(x => x.id === matterId)
     if (!m) return
@@ -319,8 +334,10 @@ export const useMatterStore = defineStore('matter', () => {
 
   /** 更新期限（双时间线：实质性修改保留旧版本到 history，可回溯"当时为什么这么安排"） */
   function updateDeadline(
-    matterId: string, deadlineId: string,
-    updates: Partial<DeadlineItem>, changeReason?: string,
+    matterId: string,
+    deadlineId: string,
+    updates: Partial<DeadlineItem>,
+    changeReason?: string,
   ): boolean {
     const m = matters.value.find(x => x.id === matterId)
     if (!m || !m.deadlines) return false
@@ -329,8 +346,9 @@ export const useMatterStore = defineStore('matter', () => {
     const now = new Date().toISOString()
 
     // 实质性字段变更（type/日期/备注/自定义标签）才算修订；completed 翻转不算
-    const meaningful = (['type', 'customLabel', 'date', 'note'] as const)
-      .some(k => updates[k] !== undefined && updates[k] !== cur[k])
+    const meaningful = (['type', 'customLabel', 'date', 'note'] as const).some(
+      k => updates[k] !== undefined && updates[k] !== cur[k],
+    )
     if (meaningful) {
       cur.history = cur.history || []
       // 旧版本关窗：validUntil = 现在
@@ -346,7 +364,7 @@ export const useMatterStore = defineStore('matter', () => {
     }
     Object.assign(cur, updates)
     if (meaningful) cur.validFrom = now
-    cur.supersededAt = null   // 编辑现行期限 = 开新版本，保持有效
+    cur.supersededAt = null // 编辑现行期限 = 开新版本，保持有效
     m.updatedAt = new Date()
     saveMatters(matters.value)
 
@@ -366,8 +384,13 @@ export const useMatterStore = defineStore('matter', () => {
     const now = new Date().toISOString()
     d.history = d.history || []
     d.history.unshift({
-      type: d.type, customLabel: d.customLabel, date: d.date, note: d.note,
-      validFrom: d.validFrom || d.createdAt, validUntil: now, changeReason,
+      type: d.type,
+      customLabel: d.customLabel,
+      date: d.date,
+      note: d.note,
+      validFrom: d.validFrom || d.createdAt,
+      validUntil: now,
+      changeReason,
     })
     d.supersededAt = now
     m.updatedAt = new Date()
@@ -388,7 +411,7 @@ export const useMatterStore = defineStore('matter', () => {
     if (!d || !d.supersededAt) return false
     const now = new Date().toISOString()
     d.supersededAt = null
-    d.validFrom = now   // 恢复 = 新版本起点（原窗口历史仍在 history 中）
+    d.validFrom = now // 恢复 = 新版本起点（原窗口历史仍在 history 中）
     m.updatedAt = new Date()
     saveMatters(matters.value)
     _scheduleDeadlineNotification(matterId, d, m.title)
@@ -420,13 +443,7 @@ export const useMatterStore = defineStore('matter', () => {
       // 注册新提醒
       import('../lib/caseConstants').then(({ DEADLINE_TYPE_LABELS }) => {
         const label = deadline.customLabel || DEADLINE_TYPE_LABELS[deadline.type] || '期限'
-        scheduleDeadlineReminders(
-          matterId,
-          deadline.id,
-          new Date(deadline.date),
-          label,
-          matterTitle,
-        )
+        scheduleDeadlineReminders(matterId, deadline.id, new Date(deadline.date), label, matterTitle)
       })
     })
   }
@@ -462,36 +479,49 @@ export const useMatterStore = defineStore('matter', () => {
     for (const m of matters.value) {
       // 编辑时排除自身
       if (excludeMatterId && m.id === excludeMatterId) continue
-      // 已归档案件不参与冲突检查（已结束，无利益冲突风险）
-      if (m.stage === '已归档') continue
+      // 已归档/已完成案件不参与冲突检查（已结案，无利益冲突风险；
+      // archivedMatters 把「已完成」也视为结案，此处口径保持一致）
+      if (m.stage === '已归档' || m.stage === '已完成') continue
 
       // 规则1: 当前委托人 = 某现有案件的对方当事人 → blocked
       if (m.counterparty && isPartyMatch(client, m.counterparty)) {
         matches.push({
-          level: 'blocked', type: 'same-client-as-counterparty',
+          level: 'blocked',
+          type: 'same-client-as-counterparty',
           description: `当前委托人「${client}」与案件「${m.title}」的对方当事人「${m.counterparty}」相同。律师不得在同一案件中为双方当事人担任代理人，亦不得在后续案件中为前案对方当事人代理针对前案委托人的事务。`,
-          matterId: m.id, matterTitle: m.title, matterStage: m.stage,
-          field: 'client', matchedValue: m.counterparty,
+          matterId: m.id,
+          matterTitle: m.title,
+          matterStage: m.stage,
+          field: 'client',
+          matchedValue: m.counterparty,
         })
       }
 
       // 规则2: 当前对方当事人 = 某现有案件的委托人 → blocked
       if (counterparty && m.client && isPartyMatch(counterparty, m.client)) {
         matches.push({
-          level: 'blocked', type: 'same-counterparty-as-client',
+          level: 'blocked',
+          type: 'same-counterparty-as-client',
           description: `当前对方当事人「${counterparty}」是案件「${m.title}」的现有委托人「${m.client}」。代理该对方当事人将构成对现有委托人利益冲突。`,
-          matterId: m.id, matterTitle: m.title, matterStage: m.stage,
-          field: 'counterparty', matchedValue: m.client,
+          matterId: m.id,
+          matterTitle: m.title,
+          matterStage: m.stage,
+          field: 'counterparty',
+          matchedValue: m.client,
         })
       }
 
       // 规则3（原规则4）: 对方律师在现有案件中是己方委托人 → warning
       if (opposingCounsel && m.client && isPartyMatch(opposingCounsel, m.client)) {
         matches.push({
-          level: 'warning', type: 'same-opposing-counsel',
+          level: 'warning',
+          type: 'same-opposing-counsel',
           description: `对方律师「${opposingCounsel}」是案件「${m.title}」的现有委托人。律师作为委托人将构成执业行为规范上的潜在冲突。`,
-          matterId: m.id, matterTitle: m.title, matterStage: m.stage,
-          field: 'opposingCounsel', matchedValue: m.client,
+          matterId: m.id,
+          matterTitle: m.title,
+          matterStage: m.stage,
+          field: 'opposingCounsel',
+          matchedValue: m.client,
         })
       }
 
@@ -500,10 +530,14 @@ export const useMatterStore = defineStore('matter', () => {
         // 仅当委托人不同时才提示（委托人相同即同一客户系列案件，正常代理）
         if (!m.client || !isPartyMatch(client, m.client)) {
           matches.push({
-            level: 'warning', type: 'same-counterparty',
+            level: 'warning',
+            type: 'same-counterparty',
             description: `对方当事人「${counterparty}」与案件「${m.title}」的对方当事人相同。可能是系列案件，请律师核实是否构成关联案件合并审理。`,
-            matterId: m.id, matterTitle: m.title, matterStage: m.stage,
-            field: 'counterparty', matchedValue: m.counterparty,
+            matterId: m.id,
+            matterTitle: m.title,
+            matterStage: m.stage,
+            field: 'counterparty',
+            matchedValue: m.counterparty,
           })
         }
       }
@@ -520,11 +554,28 @@ export const useMatterStore = defineStore('matter', () => {
   }
 
   return {
-    matters, activeMatterId, activeMatter, activeMatters, archivedMatters, mattersByStage,
-    addMatter, updateMatter, deleteMatter, setActiveMatter,
-    addCategory, removeCategory, categoriesForMatter, STAGES,
-    checkConflict, getConflictLevel,
-    activeDeadlinesFor, nearestDeadlineFor, addDeadline, updateDeadline, removeDeadline, restoreDeadline, toggleDeadline,
+    matters,
+    activeMatterId,
+    activeMatter,
+    activeMatters,
+    archivedMatters,
+    mattersByStage,
+    addMatter,
+    updateMatter,
+    deleteMatter,
+    setActiveMatter,
+    addCategory,
+    removeCategory,
+    categoriesForMatter,
+    STAGES,
+    checkConflict,
+    getConflictLevel,
+    activeDeadlinesFor,
+    nearestDeadlineFor,
+    addDeadline,
+    updateDeadline,
+    removeDeadline,
+    restoreDeadline,
+    toggleDeadline,
   }
 })
-

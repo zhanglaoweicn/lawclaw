@@ -138,7 +138,7 @@
                   <el-icon size="11"><CopyDocument /></el-icon> 复制全部
                 </button>
               </div>
-              <CitationCard v-for="cite in msg.citations" :key="cite.article" :citation="cite" />
+              <CitationCard v-for="(cite, ci) in msg.citations" :key="`${cite.law}-${cite.article}-${ci}`" :citation="cite" />
             </div>
             <div v-if="msg.role === 'user' && editingMessageId === msg.id" class="msg-edit-overlay">
               <el-input v-model="editMessageText" type="textarea" :rows="3" @keydown.enter.prevent="confirmEditMessage" />
@@ -707,7 +707,9 @@ async function sendMessage() {
   // ── RPC skill: call backend legal_search API directly ──
   if (skill?.rpcMethod) {
     try {
-      const searchType = skill.id === 'case-search' ? 'case' : 'law'
+      // 与 SkillPage 一致：优先用技能自带的 searchType（权威案例/法条反查通道），
+      // 旧版硬编码只认 case-search，导致这两个技能静默走错通道
+      const searchType = skill.searchType || (skill.id === 'case-search' ? 'case' : 'law')
       const result = await backend.legalSearch(text, searchType)
       const results = (result?.results || []) as any[]
       let reply = ''
@@ -1010,9 +1012,8 @@ async function copyCitations(cites: Array<{ law: string; article: string; conten
   const text = cites
     .map(c => `《${c.law}》${c.article}：${c.content.replace(/^《[^》]*》/, '').trim() || c.content}`)
     .join('\n')
-  navigator.clipboard.writeText(text)
-    .then(() => ElMessage.success(`已复制 ${cites.length} 条引用`))
-    .catch(() => ElMessage.warning('复制失败'))
+  // 统一走 copyText（Clipboard API 失焦时抛 NotAllowedError，需 execCommand 降级兜底）
+  ;(await copyText(text)) ? ElMessage.success(`已复制 ${cites.length} 条引用`) : ElMessage.warning('复制失败')
 }
 
 // ── AI 回复一键导出 Word（法律文书格式：宋体/黑体/首行缩进） ──
@@ -1076,7 +1077,14 @@ onMounted(() => {
 })
 
 // 流式输出期间跟随滚动（用户向上翻阅历史时暂停，滚回底部附近自动恢复）
-watch(chatStore.messages, () => { scrollToBottom() }, { deep: true })
+// 旧版深度 watch 整个 messages 数组：每收到一个 delta 都要全量遍历所有历史消息（O(n²)）。
+// 改为浅监听「条数 + 末条正文/推理长度」组合信号，computed 只触达 length，代价恒定。
+const _scrollTick = computed(() => {
+  const msgs = chatStore.messages
+  const last = msgs[msgs.length - 1]
+  return msgs.length + (last ? last.content.length + (last.reasoning?.length || 0) : 0)
+})
+watch(_scrollTick, () => { scrollToBottom() })
 
 function formatTime(date: Date) { return new Date(date).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) }
 </script>

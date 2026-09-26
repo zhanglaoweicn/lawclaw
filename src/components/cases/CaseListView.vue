@@ -114,7 +114,6 @@ import CaseCreateDialog from './CaseCreateDialog.vue'
 const caseViewStore = useCaseViewStore()
 const emit = defineEmits<{
   'select-case': [id: string]
-  'new-chat': []
 }>()
 const matterStore = useMatterStore()
 const showCreateDialog = ref(false)
@@ -122,7 +121,6 @@ const showCreateDialog = ref(false)
 watch(() => caseViewStore.showNewCaseDialogFlag, (val) => {
   if (val > 0) showCreateDialog.value = true
 })
-const seeding = ref(false)
 const searchText = ref('')
 const filterStage = ref<string | null>(null)
 const filterProcedureStage = ref<ProcedureStage | null>(null)

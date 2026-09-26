@@ -2,20 +2,24 @@
 # Python: 3.14（uv venv --python 3.14）
 # 重建：uv venv runtime --python 3.14 && uv pip install --python runtime/Scripts/python.exe -r backend/requirements-runtime.txt
 # 上游 Hermes 的完整依赖见根 pyproject.toml（重依赖未随行，按需增补）
+#
+# 版本必须与 backend/runtime 实际安装版本保持一致（2026-09-27 对齐）：
+# 旧清单写的 openai==2.44/mcp==1.28.1/websockets==16.0 与实装差了大版本
+# （代码已要求 mcp 2.x 的 streamable_http_client，按旧清单重建会直接弄坏 MCP）。
 
-openai==2.44.0
-websockets==16.0
+openai==3.13.0
+websockets==17.1
 pyyaml==6.0.3
-mcp==1.28.1
+mcp==2.1.1
 pymupdf==1.28.2
 pymupdf4llm==1.28.2
 jieba==0.42.1
 python-docx==1.2.0
 openpyxl==3.1.5
-pdfminer.six==20251230
+pdfminer.six==20260107
 requests==2.34.2
 httpx==0.28.1
-python-dotenv==1.2.2
+python-dotenv==1.2.3
 concurrent-log-handler==0.9.29
 portalocker==4.3.0
-croniter
+croniter==6.2.4

@@ -43,25 +43,25 @@ argument-hint: "[事实情景 + 法律争议问题 | 合规性论证问题 | 法
 
 | 工具 | 用途 | 关键参数 |
 |------|------|---------|
-| `yuandian_rh_fg_search` | 法规关键词检索 | `keyword`、`sxx`、`xljb_1`、`top_k` |
-| `yuandian_rh_fg_detail` | 法规全文 | `fgmc` 或 `id`，可选 `refer_date` |
-| `yuandian_rh_ft_search` | 法条关键词检索 | `keyword`（必填）、`fgmc`、`sxx`、`xljb_1`、`top_k` |
-| `yuandian_rh_ft_detail` | 法条详情原文 | `fgmc`+`ftnum`，或 `id` |
-| `yuandian_law_vector_search` | 法条语义检索 | `query`、`sxx`（列表）、`return_num` |
+| `yuandian_search_laws_and_regulations` | 法规关键词检索 | `keyword`、`sxx`、`xljb_1`、`top_k` |
+| `yuandian_get_law_or_regulation_detail` | 法规全文 | `fgmc` 或 `id`，可选 `refer_date` |
+| `yuandian_search_legal_articles` | 法条关键词检索 | `keyword`（必填）、`fgmc`、`sxx`、`xljb_1`、`top_k` |
+| `yuandian_get_legal_article_detail` | 法条详情原文 | `fgmc`+`ftnum`，或 `id` |
+| `yuandian_semantic_search_legal_articles` | 法条语义检索 | `query`、`sxx`（列表）、`return_num` |
 
 **案例文书（`yuandian-case` server，对应 `legal_research.search_cases` / `legal_research.fetch_case` capability）**：
 
 | 工具 | 用途 | 关键参数 |
 |------|------|---------|
-| `yuandian_rh_qwal_search` | 权威案例检索（指导性 / 典型） | `qw`、`ay`、`ajlb`、`top_k` |
-| `yuandian_rh_ptal_search` | 普通案例检索（裁判文书） | `qw`、`fxgc`、`ajlb`、`yyft`、`top_k` |
-| `yuandian_rh_case_details` | 案例详情全文 | `type`（"ptal" 或 "qwal"，必填）、`ah` 或 `id` |
-| `yuandian_case_vector_search` | 案例语义检索 | `query`、`wenshu_type`、`dianxing`、`return_num` |
+| `yuandian_search_authoritative_cases` | 权威案例检索（指导性 / 典型） | `qw`、`ay`、`ajlb`、`top_k` |
+| `yuandian_search_judicial_cases` | 普通案例检索（裁判文书） | `qw`、`fxgc`、`ajlb`、`yyft`、`top_k` |
+| `yuandian_get_case_detail` | 案例详情全文 | `type`（"ptal" 或 "qwal"，必填）、`ah` 或 `id` |
+| `yuandian_semantic_search_cases` | 案例语义检索 | `query`、`wenshu_type`、`dianxing`、`return_num` |
 
 重要返回说明：
 
-- `yuandian_rh_ft_search` 的 `llm_content` 格式：`"- 《{fgmc}》{ft_num}##{content}"`。
-- `yuandian_rh_qwal_search` / `yuandian_rh_ptal_search` 返回 `{"total": int, "lst": [...]}`，取 `lst` 时先判断 `total > 0`。
+- `yuandian_search_legal_articles` 的 `llm_content` 格式：`"- 《{fgmc}》{ft_num}##{content}"`。
+- `yuandian_search_authoritative_cases` / `yuandian_search_judicial_cases` 返回 `{"total": int, "lst": [...]}`，取 `lst` 时先判断 `total > 0`。
 - `sxx` 字段：现行有效 / 失效 / 已被修改 / 部分失效 / 尚未生效。
 - 语义检索返回列表，每条含 `score`（相似度评分）。
 
@@ -157,7 +157,7 @@ include_domains: ["cnki.net","wanfangdata.com.cn","pku.edu.cn","tsinghua.edu.cn"
 
 **5.1 验证二手文献引用**
 
-对每条提取的法规 / 法条调用 `yuandian_rh_ft_detail`（参数：`fgmc`+`ftnum`）核实：
+对每条提取的法规 / 法条调用 `yuandian_get_legal_article_detail`（参数：`fgmc`+`ftnum`）核实：
 
 - 法条是否真实存在。
 - 内容是否一致。
@@ -166,13 +166,13 @@ include_domains: ["cnki.net","wanfangdata.com.cn","pku.edu.cn","tsinghua.edu.cn"
 **5.2 扩展检索**
 
 ```
-yuandian_rh_ft_search(keyword, sxx="现行有效", top_k=15)
-yuandian_rh_fg_search(keyword, sxx="现行有效", top_k=5)
-yuandian_rh_qwal_search(qw, ajlb="民事案件", top_k=10)
-yuandian_rh_ptal_search(qw, ajlb="民事案件", top_k=10)
+yuandian_search_legal_articles(keyword, sxx="现行有效", top_k=15)
+yuandian_search_laws_and_regulations(keyword, sxx="现行有效", top_k=5)
+yuandian_search_authoritative_cases(qw, ajlb="民事案件", top_k=10)
+yuandian_search_judicial_cases(qw, ajlb="民事案件", top_k=10)
 ```
 
-注意：调用 `yuandian_rh_ptal_search` / `yuandian_rh_qwal_search` 后**先检查 `total > 0` 再取 `lst`**。
+注意：调用 `yuandian_search_judicial_cases` / `yuandian_search_authoritative_cases` 后**先检查 `total > 0` 再取 `lst`**。
 
 **5.2.1 语义检索补充（按需使用）**
 
@@ -182,19 +182,19 @@ yuandian_rh_ptal_search(qw, ajlb="民事案件", top_k=10)
 2. 用户问题较为模糊，难以提炼精确关键词。
 
 ```
-yuandian_law_vector_search(query, sxx=["现行有效"], return_num=15)
-yuandian_case_vector_search(query, wenshu_type="民事案件", return_num=10)
+yuandian_semantic_search_legal_articles(query, sxx=["现行有效"], return_num=15)
+yuandian_semantic_search_cases(query, wenshu_type="民事案件", return_num=10)
 ```
 
-语义检索返回的每条结果含 `score`，优先使用 score 较高的结果；仍须通过 `yuandian_rh_ft_detail` 或 `yuandian_rh_case_details` 获取完整原文后再引用。
+语义检索返回的每条结果含 `score`，优先使用 score 较高的结果；仍须通过 `yuandian_get_legal_article_detail` 或 `yuandian_get_case_detail` 获取完整原文后再引用。
 
 **5.3 按需获取全文**
 
 案例高度相关或需分析裁判说理时再调：
 
 ```
-yuandian_rh_case_details(type, ah)  # type ∈ {"ptal", "qwal"}
-yuandian_rh_fg_detail(fgmc)
+yuandian_get_case_detail(type, ah)  # type ∈ {"ptal", "qwal"}
+yuandian_get_law_or_regulation_detail(fgmc)
 ```
 
 ### 第六阶段：分析与推理
@@ -320,7 +320,7 @@ graph TD
 
 向用户汇报本次工具使用情况（仅工作内容透明，不暴露 implementation detail）：
 
-- **元典 MCP**：调用了哪些工具（如 `yuandian_rh_ft_detail` / `yuandian_rh_qwal_search`）、各几次、分别检索了什么主题。
+- **元典 MCP**：调用了哪些工具（如 `yuandian_get_legal_article_detail` / `yuandian_search_authoritative_cases`）、各几次、分别检索了什么主题。
 - **Tavily**：调用几次、检索了什么关键词、限定了哪些域名（律所 / 政府 / 学术 / 综合）。
 - **覆盖局限**：本次研究的命中弱点（如某领域 qwal 收录少、某条文跨年份修订）和建议的人工核验点。
 
@@ -335,7 +335,7 @@ graph TD
 
 ## 工作约束
 
-- **不编造法条**：所有法条必须通过 `yuandian_rh_ft_detail` 或 `yuandian_rh_ft_search` 获取原文，返回为空时如实告知，不用 AI 记忆替代。
+- **不编造法条**：所有法条必须通过 `yuandian_get_legal_article_detail` 或 `yuandian_search_legal_articles` 获取原文，返回为空时如实告知，不用 AI 记忆替代。
 - **不编造案例**：所有案例必须来自元典 MCP 工具检索结果。
 - **每条法条引用必须包含**：法规名称、法条号、原文内容、时效性状态。
 - **未经 MCP 核验的内容必须标注 `[模型知识 — 需核验]`**。

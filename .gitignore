@@ -37,6 +37,10 @@ backend/.hermes/*
 # 技能库内的运行期缓存/日志仍不进库
 backend/.hermes/skills/**/__pycache__/
 backend/.hermes/skills/**/*.pyc
+# 技能使用统计（运行期写入，非构建输入——入库会让每次跑测试都弄脏工作区）
+backend/.hermes/skills/.usage.json
+backend/.hermes/skills/.usage.json.lock
+backend/.hermes/skills/.curator_ledger.jsonl
 # 构建产物与缓存
 node_modules/
 dist/

@@ -398,7 +398,7 @@ function onDrop(e: DragEvent) {
 }
 
 // ── File preview state ──
-const previewFile = ref<{ name: string; data: string; size: number; type: string; extractedText?: string; extractor?: string } | null>(null)
+const previewFile = ref<{ id?: string; name: string; data: string; size: number; type: string; extractedText?: string; extractor?: string } | null>(null)
 
 // ── Context menu state ──
 const ctxVisible = ref(false)
@@ -445,7 +445,7 @@ async function copyReview() {
   ;(await copyText(text)) ? ElMessage.success('报告已复制') : ElMessage.warning('复制失败')
 }
 
-function openPreview(f: { name: string; data: string; size: number; type: string }) {
+function openPreview(f: { id?: string; name: string; data: string; size: number; type: string }) {
   previewFile.value = f
 }
 

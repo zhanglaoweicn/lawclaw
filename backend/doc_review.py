@@ -22,6 +22,7 @@ MIT 许可；本模块为面向 LawClaw 纯文本文书的自研实现）。
 from __future__ import annotations
 
 import re
+from decimal import Decimal
 from typing import Any, Dict, List
 
 import citations
@@ -146,20 +147,39 @@ def _cn_amount_to_value(cn: str) -> int | None:
     return total + section if (total or section) else None
 
 
-_CN_AMOUNT_RE = re.compile(r"[壹贰叁肆伍陆柒捌玖][零壹贰叁肆伍陆柒捌玖拾佰仟万亿元整正]*")
-_NUM_AMOUNT_RE = re.compile(r"([1-9][\d,，]*)(?:\.\d+)?\s*元")
+# 大写金额：字符类含 角/分（"伍角"此前只匹配到"伍"，被当成 5 元产生误报）
+_CN_AMOUNT_RE = re.compile(r"[壹贰叁肆伍陆柒捌玖][零壹贰叁肆伍陆柒捌玖拾佰仟万亿元角分整正]*")
+# 数字金额：允许 0.x 元与小数（旧版 [1-9] 开头 → "0.5元" 进不了比对集合）
+_NUM_AMOUNT_RE = re.compile(r"(\d[\d,，]*(?:\.\d+)?)\s*元")
+_SUBYUAN_UNIT = {"角": Decimal("0.1"), "分": Decimal("0.01")}
+_SUBYUAN_RE = re.compile(r"([零壹贰叁肆伍陆柒捌玖])([角分])")
+
+
+def _cn_amount_exact(cn: str) -> "Decimal | None":
+    """中文大写金额 → Decimal（元/角/分全精度），无法解析返回 None。"""
+    val = Decimal(0)
+    if "元" in cn:
+        head = cn.split("元", 1)[0]
+        v = _cn_amount_to_value(re.sub(r"[整正]", "", head))
+        if v is None:
+            return None
+        val = Decimal(v)
+    for m in _SUBYUAN_RE.finditer(cn):
+        digit = _CN_AMOUNT_DIGITS.get(m.group(1))
+        if digit is None:
+            return None
+        val += _SUBYUAN_UNIT[m.group(2)] * digit
+    return val if val > 0 else None
 
 
 def m4_amount_consistency(text: str) -> List[Dict[str, Any]]:
     out = []
-    num_values = {int(m.group(1).replace(",", "").replace("，", "")) for m in _NUM_AMOUNT_RE.finditer(text)}
+    num_values = {Decimal(m.group(1).replace(",", "").replace("，", "")) for m in _NUM_AMOUNT_RE.finditer(text)}
     for m in _CN_AMOUNT_RE.finditer(text):
         cn = m.group(0)
-        # 只剥掉尾部单位字，保留「万/亿」——否则万元级金额被当成个位数量级，
-        # 正确文书全部误报（且提示写成「约 385 元」）。
-        digits = re.sub(r"[元整正]", "", cn)
-        val = _cn_amount_to_value(digits)
-        if val is None or val == 0:
+        # 元/角/分全精度换算——「伍角」精确折算 0.5 元与「0.5元」对上，不再误报 5 元
+        val = _cn_amount_exact(cn)
+        if val is None:
             continue
         if val not in num_values:
             out.append(_mk("M4 金额一致", "一般",
@@ -294,13 +314,19 @@ def citation_validity(text: str, max_checks: int = 8) -> List[Dict[str, Any]]:
     out = []
     cites = citations.extract_citations(text)
     checked = 0
+
+    def _locate(law: str) -> tuple:
+        """摘录锚定到该法名在文中的实际位置（旧版固定 (0,1)，摘录永远是全文开头）。"""
+        i = text.find(law)
+        return (i, i + len(law)) if i >= 0 else (0, min(1, len(text)))
+
     for c in cites:
         law = c["law"]
         if c.get("deprecated"):
             out.append(_mk("CIT 法条时效", "严重",
                            f"引用已废止法律「{law}」",
                            f"已于 {c.get('effective_until')} 废止，替代：{c.get('replaced_by')}",
-                           text, 0, 1))
+                           text, *_locate(law)))
             continue
         if checked >= max_checks:   # 限流保护：一次校对最多查 8 部法律
             continue
@@ -315,11 +341,11 @@ def citation_validity(text: str, max_checks: int = 8) -> List[Dict[str, Any]]:
             out.append(_mk("CIT 法条时效", "严重",
                            f"引用已废止法律「{law}」",
                            f"官方状态：已废止（公布 {npc['gbrq']}）——请改用现行有效法律",
-                           text, 0, 1))
+                           text, *_locate(law)))
         elif npc["sxx"] == 2:
             out.append(_mk("CIT 法条时效", "提示",
                            f"「{law}」存在修正版本",
-                           f"官方状态：已修改（现行版本施行 {npc['sxrq']}）——请按现行版本核对条文", text, 0, 1))
+                           f"官方状态：已修改（现行版本施行 {npc['sxrq']}）——请按现行版本核对条文", text, *_locate(law)))
     return out
 
 

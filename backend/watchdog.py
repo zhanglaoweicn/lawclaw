@@ -88,12 +88,12 @@ def scan_alerts(matters: List[Dict[str, Any]], now: datetime | None = None) -> L
         if cd:
             try:
                 cdt = datetime.fromisoformat(str(cd).replace("Z", "+00:00")).replace(tzinfo=None)
+                days = (cdt.date() - now.date()).days
+                if 0 <= days <= 7:
+                    alerts.append({"kind": "court", "matter": title, "detail": f"{days} 天后开庭",
+                                   "date": cdt.strftime("%m-%d"), "days": days})
             except Exception:
-                continue
-            days = (cdt.date() - now.date()).days
-            if 0 <= days <= 7:
-                alerts.append({"kind": "court", "matter": title, "detail": f"{days} 天后开庭",
-                               "date": cdt.strftime("%m-%d"), "days": days})
+                pass  # courtDate 畸形只影响开庭告警，不得跳过本案件的停滞检测（旧版此处 continue）
         # 僵化案件：待处理/证据收集 超 14 天未更新
         if m.get("stage") in ("待处理", "证据收集"):
             try:

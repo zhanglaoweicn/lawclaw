@@ -25,8 +25,8 @@ import { backend } from '../lib/backend'
 export type BootstrapPhase =
   | 'idle'
   | 'check-setup'
-  | 'engine-wait'      // 先把后端引擎等起来，再进配置向导 / 主界面
-  | 'engine-failed'    // 预算内没起来 → 给用户明确的「重试 / 离线继续」选择
+  | 'engine-wait' // 先把后端引擎等起来，再进配置向导 / 主界面
+  | 'engine-failed' // 预算内没起来 → 给用户明确的「重试 / 离线继续」选择
   | 'setup-wizard'
   | 'loading'
   | 'ready'
@@ -34,10 +34,10 @@ export type BootstrapPhase =
 
 export interface BootstrapState {
   phase: BootstrapPhase
-  progress: number        // 0..100，用于进度条
-  statusText: string      // Splash 下方描述文字
-  backendOnline: boolean | null  // true=已连 / false=离线降级 / null=未知
-  warning?: string        // 非致命警告（如 "后端未启动，降级为本地模式"）
+  progress: number // 0..100，用于进度条
+  statusText: string // Splash 下方描述文字
+  backendOnline: boolean | null // true=已连 / false=离线降级 / null=未知
+  warning?: string // 非致命警告（如 "后端未启动，降级为本地模式"）
 }
 
 /* ── 全局单例 ── */
@@ -50,6 +50,8 @@ export function useAppBootstrap() {
 
 /* ── 内部工厂 ── */
 function _createBootstrap() {
+  // ══ 启动代次：skipToMain 递增使在途启动步骤全部失效（见 skipToMain 注释） ══
+  let _generation = 0
   const state = reactive<BootstrapState>({
     phase: 'idle',
     progress: 0,
@@ -64,7 +66,10 @@ function _createBootstrap() {
   //    进入 phase='main' 后清掉；倒计时结束强制 skipToMain()
   let _deadlineTimer: ReturnType<typeof setTimeout> | null = null
   function _resetDeadline(ms: number = 15000) {
-    if (_deadlineTimer != null) { clearTimeout(_deadlineTimer); _deadlineTimer = null }
+    if (_deadlineTimer != null) {
+      clearTimeout(_deadlineTimer)
+      _deadlineTimer = null
+    }
     _deadlineTimer = setTimeout(() => {
       if (state.phase !== 'main' && state.phase !== 'setup-wizard') {
         // setup-wizard 允许用户慢慢填，不强制跳；其余阶段超时视为阻塞，强制进主
@@ -74,7 +79,10 @@ function _createBootstrap() {
     }, ms)
   }
   function _clearDeadline() {
-    if (_deadlineTimer != null) { clearTimeout(_deadlineTimer); _deadlineTimer = null }
+    if (_deadlineTimer != null) {
+      clearTimeout(_deadlineTimer)
+      _deadlineTimer = null
+    }
   }
   const _runSmoothProgress = () => {
     if (_raf != null) cancelAnimationFrame(_raf)
@@ -85,7 +93,7 @@ function _createBootstrap() {
         _raf = null
         return
       }
-      state.progress += diff * 0.18  // 指数缓动，视觉上更专业
+      state.progress += diff * 0.18 // 指数缓动，视觉上更专业
       _raf = requestAnimationFrame(step)
     }
     _raf = requestAnimationFrame(step)
@@ -96,9 +104,12 @@ function _createBootstrap() {
     _runSmoothProgress()
     // ══ Bridge：同步进度到 index.html 里的 #splash-micro（首帧微 Splash 零依赖可见）
     try {
-      const fn = (window as unknown as { __lawclawSplashProgress?: (p: number, t?: string) => void }).__lawclawSplashProgress
+      const fn = (window as unknown as { __lawclawSplashProgress?: (p: number, t?: string) => void })
+        .__lawclawSplashProgress
       if (typeof fn === 'function') fn(_targetProgress, state.statusText)
-    } catch { /* bridge 不存在时静默 */ }
+    } catch {
+      /* bridge 不存在时静默 */
+    }
   }
 
   // ══ Bridge：进入主界面（phase==='main'）时淡出 #splash-micro + 解锁 #app visibility
@@ -107,15 +118,18 @@ function _createBootstrap() {
     try {
       const fn = (window as unknown as { __hideLawClawSplash?: () => void }).__hideLawClawSplash
       if (typeof fn === 'function') fn()
-    } catch { /* bridge 不存在时静默 */ }
+    } catch {
+      /* bridge 不存在时静默 */
+    }
   }
 
   /* 小工具：最小耗时保护（避免进度条闪跳太快 → 用户感知 "假"） */
-  const _delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+  const _delay = (ms: number) => new Promise<void>(r => setTimeout(r, ms))
 
   /* ── 入口：启动流程（可重入，用于 Wizard 完成后再次进入 loading） ── */
   async function start() {
     const setupStore = useSetupStore()
+    const gen = ++_generation // 本次启动的代次；skipToMain 之后即失效
     state.warning = undefined
     state.backendOnline = null
 
@@ -125,13 +139,15 @@ function _createBootstrap() {
     // Step 0: 检查配置完整性
     state.phase = 'check-setup'
     _setTarget(2, '检查用户配置…')
-    await _delay(180)  // 给 Splash 品牌渐显预留一点时间
+    await _delay(180) // 给 Splash 品牌渐显预留一点时间
+    if (gen !== _generation) return
 
     // Step 1: 先把后端引擎等起来。
     // 引擎是捆绑的 Python 进程，首次启动要解压/导入整套栈，通常 10–30 秒。以前直接进配置
     // 向导（P2 只等 2.5 秒就"降级"），用户会先看到配置页、点「测试连接」却得到
     // 「后端引擎未启动」——顺序反了。现在引擎就绪才继续，起不来则给出明确的重试入口。
     const engineOk = await _waitForEngine()
+    if (gen !== _generation) return
     if (!engineOk) {
       state.phase = 'engine-failed'
       state.warning = '后端引擎启动超时'
@@ -143,40 +159,49 @@ function _createBootstrap() {
       // 交给外层显示 SetupWizard（此时引擎已可用，「测试连接」开箱即通）
       state.phase = 'setup-wizard'
       _setTarget(5, '等待配置完成…')
-      _tryHideMicroSplash()  // ══ CRITICAL：解锁 #app visibility，让 SetupWizard 真正可见！
+      _tryHideMicroSplash() // ══ CRITICAL：解锁 #app visibility，让 SetupWizard 真正可见！
       // setup-wizard 阶段清掉兜底计时（用户填表多久都允许），等 done 回调再重建
       _clearDeadline()
       return
     }
 
     // 配置已完整 → 进入正式加载
-    await _runLoadingPipeline()
+    await _runLoadingPipeline(gen)
   }
 
   /* ── 等后端引擎就绪（WS 连上且能应答 ping）── */
   const ENGINE_BUDGET_MS = 120_000
   async function _waitForEngine(): Promise<boolean> {
     const chat = useChatStore()
-    if (chat.connected) { state.backendOnline = true; return true }
+    if (chat.connected) {
+      state.backendOnline = true
+      return true
+    }
     state.phase = 'engine-wait'
     state.backendOnline = null
-    _resetDeadline(ENGINE_BUDGET_MS + 15_000)   // 引擎等待期间放宽兜底超时
+    _resetDeadline(ENGINE_BUDGET_MS + 15_000) // 引擎等待期间放宽兜底超时
     const t0 = Date.now()
     while (Date.now() - t0 < ENGINE_BUDGET_MS) {
       // 状态文案保持恒定：带秒数的文案每 800ms 变一次，会反复触发 splash 的淡入动画（闪烁）。
       // 进度条本身在动，已足够表达"在推进"。
       _setTarget(
-        Math.min(54, 4 + (Date.now() - t0) / ENGINE_BUDGET_MS * 50),
+        Math.min(54, 4 + ((Date.now() - t0) / ENGINE_BUDGET_MS) * 50),
         '正在启动后端引擎…（首次启动约 10–30 秒，请稍候）',
       )
-      try { await chat.connectBackend() } catch { /* 继续等 */ }
+      try {
+        await chat.connectBackend()
+      } catch {
+        /* 继续等 */
+      }
       if (chat.connected) {
         // 不只是端口开着：真的打一次 RPC，确认引擎可应答
         try {
           await backend.call('ping', {})
           state.backendOnline = true
           return true
-        } catch { /* 还没准备好，继续等 */ }
+        } catch {
+          /* 还没准备好，继续等 */
+        }
       }
       await _delay(800)
     }
@@ -186,23 +211,26 @@ function _createBootstrap() {
 
   /* ── Wizard 完成回调 → 继续进入加载阶段 ── */
   async function onSetupWizardDone() {
-    _resetDeadline(15000)  // 重启兜底计时
-    await _runLoadingPipeline()
+    _resetDeadline(15000) // 重启兜底计时
+    await _runLoadingPipeline(_generation)
   }
 
-  /* ── 核心加载管线 ── */
-  async function _runLoadingPipeline() {
+  /* ── 核心加载管线（gen = 所属启动代次；skipToMain 后失效直接退出） ── */
+  async function _runLoadingPipeline(gen: number) {
+    if (gen !== _generation) return
     state.phase = 'loading'
     try {
       // P1: 基础 store 恢复（同步，加一个最小时延保证进度条可见）
       const p1Done = _runPhase1()
       await Promise.all([p1Done, _delay(260)])
+      if (gen !== _generation) return
       _setTarget(20, '本地数据已恢复')
 
       // P2: 后端 WS 连接（最长 2.5s，超时降级为本地模式，不阻塞主流程）
       const p2Done = _runPhase2()
       const p2Timer = _delay(2500).then(() => 'timeout' as const)
       const p2Res = await Promise.race([p2Done, p2Timer])
+      if (gen !== _generation) return
       if (p2Res === 'timeout') {
         state.backendOnline = false
         state.warning = '后端服务未启动（降级为本地模式，对话功能受限）'
@@ -213,31 +241,37 @@ function _createBootstrap() {
 
       // P3: 业务数据 / 会话 / 通知调度
       await Promise.all([_runPhase3(), _delay(220)])
+      if (gen !== _generation) return
       _setTarget(80, '业务环境已就绪')
 
       // P4: 预加载（动态 import 一些重组件 / 预热 store）
       await Promise.all([_runPhase4(), _delay(180)])
+      if (gen !== _generation) return
       _setTarget(95, '正在进入工作台…')
 
       // P5: 准备就绪，短暂停留让用户看到 100%
       await _delay(260)
+      if (gen !== _generation) return
       _setTarget(100, '准备就绪')
       state.phase = 'ready'
-      await _delay(380)  // 淡出过渡交给外层（380ms 内淡出 Splash + 淡入 Main）
+      await _delay(380) // 淡出过渡交给外层（380ms 内淡出 Splash + 淡入 Main）
+      if (gen !== _generation) return
       state.phase = 'main'
-      _tryHideMicroSplash()  // ══ Bridge：解锁 #app 可见性 + 移除 index.html 微 Splash
-      _clearDeadline()       // ══ 兜底计时器关闭
+      _tryHideMicroSplash() // ══ Bridge：解锁 #app 可见性 + 移除 index.html 微 Splash
+      _clearDeadline() // ══ 兜底计时器关闭
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
       state.warning = state.warning ?? msg
+      if (gen !== _generation) return
       // 出错不挂死，降级进入主界面（用户还能改配置）
       state.phase = 'ready'
       state.statusText = '部分服务加载失败，已进入主界面'
       _setTarget(100)
       await _delay(380)
+      if (gen !== _generation) return
       state.phase = 'main'
-      _tryHideMicroSplash()  // ══ Bridge：降级路径也必须解锁
-      _clearDeadline()       // ══ 兜底计时器关闭
+      _tryHideMicroSplash() // ══ Bridge：降级路径也必须解锁
+      _clearDeadline() // ══ 兜底计时器关闭
     }
   }
 
@@ -251,7 +285,7 @@ function _createBootstrap() {
     // chatStore 在 P2 连接，这里只 ensure 本地数据在
     const chat = useChatStore()
     chat.ensureFirstSession()
-    state.progress = Math.min(state.progress, 8)  // 至少 8%
+    state.progress = Math.min(state.progress, 8) // 至少 8%
   }
 
   /* ── P2: 后端连接 ── */
@@ -297,11 +331,15 @@ function _createBootstrap() {
 
   /* ── 调试辅助：强制跳过（例如开发环境快捷键 Ctrl+Shift+F10） ── */
   function skipToMain() {
+    // generation 守卫：skipToMain（调试快捷键/15s 兜底）只应"跳过当前这一次启动"，
+    // 否则后台仍在跑的 _waitForEngine 轮询 / _runLoadingPipeline 会在稍后把 phase
+    // 拉回 loading——已进主界面的用户会看到 Splash 复现再消失
+    _generation++
     state.phase = 'main'
     state.progress = 100
     state.statusText = ''
-    _tryHideMicroSplash()  // ══ Bridge：调试跳过路径也要解锁 #app
-    _clearDeadline()       // ══ 兜底计时器关闭（含兜底超时内部调用时自清除）
+    _tryHideMicroSplash() // ══ Bridge：调试跳过路径也要解锁 #app
+    _clearDeadline() // ══ 兜底计时器关闭（含兜底超时内部调用时自清除）
   }
 
   return {

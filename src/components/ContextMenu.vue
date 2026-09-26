@@ -23,7 +23,6 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from 'vue'
 import { ArrowRight } from '@element-plus/icons-vue'
 import type { Component } from 'vue'
 
@@ -44,22 +43,6 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ close: [] }>()
-
-watch(() => props.visible, (v) => {
-  if (v) {
-    // Adjust position to keep menu in viewport
-    const el = document.querySelector('.ctx-menu') as HTMLElement | null
-    if (el) {
-      const rect = el.getBoundingClientRect()
-      if (rect.right > window.innerWidth) {
-        el.style.left = (props.pos.x - rect.width) + 'px'
-      }
-      if (rect.bottom > window.innerHeight) {
-        el.style.top = (props.pos.y - rect.height) + 'px'
-      }
-    }
-  }
-})
 
 function onClick(item: ContextMenuItem) {
   if (item.divider) return

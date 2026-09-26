@@ -35,7 +35,9 @@ function loadItems(): ScheduleItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) return JSON.parse(raw)
-  } catch { return [] }
+  } catch {
+    return []
+  }
   // 首启为空日程：本产品不带任何内置数据，日程由案件期限/开庭日同步或律师手工创建
   return []
 }
@@ -87,45 +89,49 @@ export const useScheduleStore = defineStore('schedule', () => {
       await rescheduleMatterDeadlineReminders(
         matter.id,
         matter.deadlines
-          .filter(d => !d.supersededAt)   // 已撤销期限不再提醒
+          .filter(d => !d.supersededAt) // 已撤销期限不再提醒
           .map(d => ({
-          id: d.id,
-          date: d.date,
-          type: d.type,
-          customLabel: d.customLabel,
-          completed: !!d.completed,
-        })),
+            id: d.id,
+            date: d.date,
+            type: d.type,
+            customLabel: d.customLabel,
+            completed: !!d.completed,
+          })),
         matter.title,
         DEADLINE_TYPE_LABELS,
       )
     }
   }
 
-/**
- * 把「某日」类日程（开庭/期限）统一到本地 HH:00。
- *
- * 开庭与期限在实务上都是"某日"概念。数据源可能是 date-only（手填）也可能是带钟点的
- * 时间戳（种子/表单产生的 Date）——后者若原样使用，日历会显示成"9月21日 04:13"，
- * 通知也会在凌晨触发。此函数按当地日历日重建，两类输入统一落到 hour 点。
- */
-function normalizeDayDateTime(value: string, hour = 9): string {
-  let y: number, mo: number, dd: number
-  const plain = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
-  if (plain) {
-    y = Number(plain[1]); mo = Number(plain[2]); dd = Number(plain[3])
-  } else {
-    const d = new Date(value)
-    if (isNaN(d.getTime())) return value
-    y = d.getFullYear(); mo = d.getMonth() + 1; dd = d.getDate()
+  /**
+   * 把「某日」类日程（开庭/期限）统一到本地 HH:00。
+   *
+   * 开庭与期限在实务上都是"某日"概念。数据源可能是 date-only（手填）也可能是带钟点的
+   * 时间戳（种子/表单产生的 Date）——后者若原样使用，日历会显示成"9月21日 04:13"，
+   * 通知也会在凌晨触发。此函数按当地日历日重建，两类输入统一落到 hour 点。
+   */
+  function normalizeDayDateTime(value: string, hour = 9): string {
+    let y: number, mo: number, dd: number
+    const plain = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+    if (plain) {
+      y = Number(plain[1])
+      mo = Number(plain[2])
+      dd = Number(plain[3])
+    } else {
+      const d = new Date(value)
+      if (isNaN(d.getTime())) return value
+      y = d.getFullYear()
+      mo = d.getMonth() + 1
+      dd = d.getDate()
+    }
+    const local = new Date(y, mo - 1, dd, hour, 0, 0)
+    return isNaN(local.getTime()) ? value : local.toISOString()
   }
-  const local = new Date(y, mo - 1, dd, hour, 0, 0)
-  return isNaN(local.getTime()) ? value : local.toISOString()
-}
 
-/** 开庭日 → 本地 09:00（开庭惯例时段） */
-function normalizeCourtDateTime(courtDate: string): string {
-  return normalizeDayDateTime(courtDate, 9)
-}
+  /** 开庭日 → 本地 09:00（开庭惯例时段） */
+  function normalizeCourtDateTime(courtDate: string): string {
+    return normalizeDayDateTime(courtDate, 9)
+  }
 
   // ── Conflict detection ──
   function checkCourtConflicts(dateTime: string, endDateTime?: string, excludeId?: string): ScheduleItem[] {
@@ -174,7 +180,10 @@ function normalizeCourtDateTime(courtDate: string): string {
     }
     if (staleIds.length > 0) {
       items.value = items.value.filter(i => !staleIds.includes(i.id))
-      staleIds.forEach(id => { syncedCourtKeys.value.delete(id); syncedDeadlineKeys.value.delete(id) })
+      staleIds.forEach(id => {
+        syncedCourtKeys.value.delete(id)
+        syncedDeadlineKeys.value.delete(id)
+      })
     }
 
     // Sync: update existing OR create new
@@ -184,12 +193,17 @@ function normalizeCourtDateTime(courtDate: string): string {
         const existing = items.value.find(i => i.id === courtKey)
         if (existing) {
           const newDate = normalizeCourtDateTime(m.courtDate)
-          if (existing.dateTime !== newDate) { existing.dateTime = newDate }
+          if (existing.dateTime !== newDate) {
+            existing.dateTime = newDate
+          }
         } else if (!syncedCourtKeys.value.has(courtKey)) {
           items.value.unshift({
-            id: courtKey, title: `开庭: ${m.title}`,
+            id: courtKey,
+            title: `开庭: ${m.title}`,
             dateTime: normalizeCourtDateTime(m.courtDate),
-            type: 'court', matterId: m.id, completed: false,
+            type: 'court',
+            matterId: m.id,
+            completed: false,
             createdAt: new Date().toISOString(),
           })
         }
@@ -197,21 +211,27 @@ function normalizeCourtDateTime(courtDate: string): string {
       }
 
       // ── 多期限模型（v3+）：每个现行有效且未完成的期限各同步一条日程 ──
-      for (const dl of (m.deadlines || [])) {
+      for (const dl of m.deadlines || []) {
         if (dl.supersededAt || dl.completed) continue
         const dlKey = `dl-${dl.id}`
         const label = dl.customLabel || DEADLINE_TYPE_LABELS[dl.type] || '期限'
         const iso = normalizeDayDateTime(dl.date)
         const existing = items.value.find(i => i.id === dlKey)
         if (existing) {
-          if (existing.dateTime !== iso) { existing.dateTime = iso }
-          if (existing.title !== `${label}: ${m.title}`) { existing.title = `${label}: ${m.title}` }
+          if (existing.dateTime !== iso) {
+            existing.dateTime = iso
+          }
+          if (existing.title !== `${label}: ${m.title}`) {
+            existing.title = `${label}: ${m.title}`
+          }
         } else if (!syncedDeadlineKeys.value.has(dlKey)) {
           items.value.unshift({
-            id: dlKey, title: `${label}: ${m.title}`,
+            id: dlKey,
+            title: `${label}: ${m.title}`,
             dateTime: iso,
             type: dl.type === 'court-date' ? 'court' : 'deadline',
-            matterId: m.id, completed: false,
+            matterId: m.id,
+            completed: false,
             createdAt: new Date().toISOString(),
           })
         }
@@ -227,13 +247,19 @@ function normalizeCourtDateTime(courtDate: string): string {
     const iso = normalizeCourtDateTime(courtDate)
     const existing = items.value.find(i => i.id === key)
     if (existing) {
-      if (existing.dateTime !== iso) { existing.dateTime = iso; saveItems(items.value) }
+      if (existing.dateTime !== iso) {
+        existing.dateTime = iso
+        saveItems(items.value)
+      }
       return false
     }
     items.value.unshift({
-      id: key, title: `开庭: ${matterTitle}`,
+      id: key,
+      title: `开庭: ${matterTitle}`,
       dateTime: iso,
-      type: 'court', matterId, completed: false,
+      type: 'court',
+      matterId,
+      completed: false,
       note: note || undefined,
       createdAt: new Date().toISOString(),
     })
@@ -281,7 +307,9 @@ function normalizeCourtDateTime(courtDate: string): string {
   // ── Schedule Templates ──
   const scheduleTemplates: ScheduleTemplate[] = [
     {
-      id: 'court-prep', name: '开庭准备', icon: '⚡',
+      id: 'court-prep',
+      name: '开庭准备',
+      icon: '⚡',
       description: '开庭前后关键节点',
       items: [
         { title: '庭前策略讨论会', type: 'meeting', durationMinutes: 120, offsetDays: -3 },
@@ -291,16 +319,26 @@ function normalizeCourtDateTime(courtDate: string): string {
       ],
     },
     {
-      id: 'client-meeting', name: '客户案件沟通', icon: '🤝',
+      id: 'client-meeting',
+      name: '客户案件沟通',
+      icon: '🤝',
       description: '客户会见及案件梳理',
       items: [
         { title: '客户会见 — 案情梳理', type: 'meeting', durationMinutes: 120, offsetDays: 0 },
         { title: '内部案件分析会', type: 'meeting', durationMinutes: 60, offsetDays: 1 },
-        { title: '出具初步法律意见', type: 'deadline', durationMinutes: 0, offsetDays: 3, note: '向客户发送初步法律分析意见' },
+        {
+          title: '出具初步法律意见',
+          type: 'deadline',
+          durationMinutes: 0,
+          offsetDays: 3,
+          note: '向客户发送初步法律分析意见',
+        },
       ],
     },
     {
-      id: 'evidence-collection', name: '证据收集', icon: '📋',
+      id: 'evidence-collection',
+      name: '证据收集',
+      icon: '📋',
       description: '调证、质证关键日程',
       items: [
         { title: '赴法院/机构调取证据', type: 'appointment', durationMinutes: 180, offsetDays: 0 },
@@ -309,16 +347,54 @@ function normalizeCourtDateTime(courtDate: string): string {
       ],
     },
     {
-      id: 'appeal', name: '上诉流程', icon: '🔄',
+      id: 'appeal',
+      name: '上诉流程',
+      icon: '🔄',
       description: '收到判决/裁定后的上诉日程（自送达之日起算）',
       items: [
-        { title: '研读一审裁判文书并分析', type: 'meeting', durationMinutes: 120, offsetDays: 0, note: '识别是判决书还是裁定书，分别适用15日或10日上诉期' },
-        { title: '与客户沟通上诉意向', type: 'meeting', durationMinutes: 60, offsetDays: 1, note: '告知上诉风险、费用、审限，确认是否上诉' },
+        {
+          title: '研读一审裁判文书并分析',
+          type: 'meeting',
+          durationMinutes: 120,
+          offsetDays: 0,
+          note: '识别是判决书还是裁定书，分别适用15日或10日上诉期',
+        },
+        {
+          title: '与客户沟通上诉意向',
+          type: 'meeting',
+          durationMinutes: 60,
+          offsetDays: 1,
+          note: '告知上诉风险、费用、审限，确认是否上诉',
+        },
         { title: '起草上诉状', type: 'meeting', durationMinutes: 180, offsetDays: 3 },
-        { title: '客户确认上诉状并签字', type: 'deadline', durationMinutes: 0, offsetDays: 7, note: '需预留邮寄/当面签署时间' },
-        { title: '递交上诉状 + 缴纳上诉费', type: 'deadline', durationMinutes: 0, offsetDays: 10, note: '通过原审法院递交；上诉费按上诉请求金额计算' },
-        { title: '裁定上诉截止日（10日）', type: 'deadline', durationMinutes: 0, offsetDays: 10, note: '《民事诉讼法》第171条：不予受理、管辖权异议、驳回起诉裁定上诉期为10日' },
-        { title: '判决上诉截止日（15日）', type: 'deadline', durationMinutes: 0, offsetDays: 15, note: '《民事诉讼法》第171条：一审判决上诉期为15日，自送达之日起算' },
+        {
+          title: '客户确认上诉状并签字',
+          type: 'deadline',
+          durationMinutes: 0,
+          offsetDays: 7,
+          note: '需预留邮寄/当面签署时间',
+        },
+        {
+          title: '递交上诉状 + 缴纳上诉费',
+          type: 'deadline',
+          durationMinutes: 0,
+          offsetDays: 10,
+          note: '通过原审法院递交；上诉费按上诉请求金额计算',
+        },
+        {
+          title: '裁定上诉截止日（10日）',
+          type: 'deadline',
+          durationMinutes: 0,
+          offsetDays: 10,
+          note: '《民事诉讼法》第171条：不予受理、管辖权异议、驳回起诉裁定上诉期为10日',
+        },
+        {
+          title: '判决上诉截止日（15日）',
+          type: 'deadline',
+          durationMinutes: 0,
+          offsetDays: 15,
+          note: '《民事诉讼法》第171条：一审判决上诉期为15日，自送达之日起算',
+        },
       ],
     },
   ]
@@ -328,18 +404,28 @@ function normalizeCourtDateTime(courtDate: string): string {
     if (!template) return []
     const baseDate = new Date(startDate)
     const created: ScheduleItem[] = []
+    // 本地时间 → "YYYY-MM-DDTHH:mm:ss"（无时区后缀，new Date() 按本地解析）。
+    // 旧版用 toISOString()（UTC）剥 Z 当本地时间：UTC+8 下模板时间整体早 8 小时，
+    // 本地 0-8 点操作还会整体偏移一天。
+    const fmtLocal = (d: Date) => {
+      const p = (n: number) => String(n).padStart(2, '0')
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+    }
     for (const tpl of template.items) {
       const date = new Date(baseDate)
       if (tpl.offsetDays) date.setDate(date.getDate() + tpl.offsetDays)
-      const dateTime = date.toISOString().replace(':00.000Z', ':00')
-      const endDateTime = tpl.durationMinutes > 0
-        ? new Date(date.getTime() + tpl.durationMinutes * 60000).toISOString().replace(':00.000Z', ':00')
-        : undefined
+      const dateTime = fmtLocal(date)
+      const endDateTime =
+        tpl.durationMinutes > 0 ? fmtLocal(new Date(date.getTime() + tpl.durationMinutes * 60000)) : undefined
       const newItem = {
         id: generateId(),
-        title: tpl.title, type: tpl.type,
-        dateTime, endDateTime,
-        completed: false, matterId: matterId, note: tpl.note,
+        title: tpl.title,
+        type: tpl.type,
+        dateTime,
+        endDateTime,
+        completed: false,
+        matterId: matterId,
+        note: tpl.note,
         createdAt: new Date().toISOString(),
       }
       items.value.unshift(newItem)
@@ -351,14 +437,29 @@ function normalizeCourtDateTime(courtDate: string): string {
 
   // ── Getters ──
   const sortedItems = computed(() =>
-    [...items.value].sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())
+    [...items.value].sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime()),
   )
 
   return {
-    items, sortedItems, showCompleted, lastUsedType, scheduleTemplates,
+    items,
+    sortedItems,
+    showCompleted,
+    lastUsedType,
+    scheduleTemplates,
     notificationEnabled,
-    syncFromMatters, ensureCourtItem, addItem, updateItem, deleteItem, toggleComplete, deleteItemsByMatter,
-    toggleShowCompleted, checkCourtConflicts, applyTemplate, setLastUsedType,
-    checkNotificationStatus, enableNotifications, rescheduleAllDeadlineReminders,
+    syncFromMatters,
+    ensureCourtItem,
+    addItem,
+    updateItem,
+    deleteItem,
+    toggleComplete,
+    deleteItemsByMatter,
+    toggleShowCompleted,
+    checkCourtConflicts,
+    applyTemplate,
+    setLastUsedType,
+    checkNotificationStatus,
+    enableNotifications,
+    rescheduleAllDeadlineReminders,
   }
 })

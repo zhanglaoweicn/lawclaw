@@ -213,19 +213,20 @@ const rpcResultWithSources = ref('')
 
 function renderRpcResult(md: string, results: any[]): string {
   try {
-    const html = renderMarkdown(md)
-    if (results.length === 0) return html
-    let sources = '<hr style="margin:16px 0"/><h4>数据来源</h4><ul style="font-size:12px;color:var(--legal-text-muted)">'
+    if (results.length === 0) return renderMarkdown(md)
+    // 来源列表并入 markdown 一并消毒（r.source 来自外部数据源，禁止消毒后再拼接）
     const usedSources = new Set<string>()
+    const lines: string[] = []
     for (const r of results.slice(0, 10)) {
       if (r.source && !usedSources.has(r.source)) {
-        sources += `<li>${r.source}</li>`
+        lines.push(`- ${r.source}`)
         usedSources.add(r.source)
       }
     }
-    sources += '</ul>'
-    return html + sources
-  } catch { return md }
+    if (!lines.length) return renderMarkdown(md)
+    const withSources = `${md}\n\n---\n\n**数据来源**\n\n${lines.join('\n')}`
+    return renderMarkdown(withSources)
+  } catch { return renderMarkdown(md) }
 }
 
 async function copyRpcResult() {

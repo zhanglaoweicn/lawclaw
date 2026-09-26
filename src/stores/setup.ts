@@ -14,8 +14,13 @@ interface SetupState {
 
 function defaultProfile(): PracticeProfile {
   return {
-    name: '', firm: '', title: '', practiceAreas: [],
-    teamSize: 'solo', yearsOfPractice: 0, jurisdiction: ['中国'],
+    name: '',
+    firm: '',
+    title: '',
+    practiceAreas: [],
+    teamSize: 'solo',
+    yearsOfPractice: 0,
+    jurisdiction: ['中国'],
     feishu: { enabled: false, appId: '', appSecret: '' },
     wecom: { enabled: false, corpId: '', botId: '', secret: '' },
   }
@@ -25,7 +30,9 @@ function loadState(): SetupState {
   try {
     const raw = localStorage.getItem(SETUP_KEY)
     if (raw) return JSON.parse(raw)
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return {
     apiKey: '',
     baseUrl: 'https://api.deepseek.com/v1',
@@ -81,24 +88,28 @@ export const useSetupStore = defineStore('setup', () => {
 
   function reset() {
     state.value = {
-      apiKey: '', baseUrl: 'https://api.deepseek.com/v1',
-      model: 'deepseek-flash', profile: null, completed: false,
+      apiKey: '',
+      baseUrl: 'https://api.deepseek.com/v1',
+      model: 'deepseek-flash',
+      profile: null,
+      completed: false,
     }
     localStorage.removeItem(SETUP_KEY)
   }
 
-  function getEnvVars(): Record<string, string> {
-    return {
-      OPENAI_API_KEY: state.value.apiKey,
-      OPENAI_BASE_URL: state.value.baseUrl,
-      LAWCLAW_MODEL: state.value.model,
-    }
-  }
-
   return {
-    isComplete, apiKey, baseUrl, model, profile,
-    feishuConfig, wecomConfig,
-    setApiKey, setProfile, setFeishuConfig, setWecomConfig,
-    complete, reset, getEnvVars,
+    isComplete,
+    apiKey,
+    baseUrl,
+    model,
+    profile,
+    feishuConfig,
+    wecomConfig,
+    setApiKey,
+    setProfile,
+    setFeishuConfig,
+    setWecomConfig,
+    complete,
+    reset,
   }
 })

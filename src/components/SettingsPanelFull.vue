@@ -214,7 +214,9 @@ onMounted(() => {
 })
 
 async function handleSave() {
-  await save()
+  // save() 失败时已自带警示 toast——不能再走成功分支，否则出现"保存失败/已保存"双提示
+  const ok = await save()
+  if (!ok) return
   // Verify connectivity
   try {
     const info = await backend.call<{ status: string; configured: boolean; model: string }>('initialize', {

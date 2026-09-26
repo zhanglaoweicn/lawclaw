@@ -264,6 +264,13 @@ _kb_cache: dict[str, tuple[str, BM25Index]] = {}
 _kb_lock = threading.Lock()
 MAX_DOC_CHARS = 30000   # 单文档注入 KB 的最大字符
 MAX_DOCS = 8            # 单案件最大文档数
+_KB_CACHE_MAX = 32      # 缓存案件数上限（FIFO 淘汰）——旧版永不驱逐，多案件长会话会累积驻留内存
+
+
+def _kb_cache_evict_locked():
+    """淘汰最旧索引（调用方须持有 _kb_lock）。"""
+    while len(_kb_cache) > _KB_CACHE_MAX:
+        _kb_cache.pop(next(iter(_kb_cache)), None)
 
 
 def kb_search(matter_id: str, query: str, documents: list[dict], top_k: int = 5) -> dict:
@@ -286,6 +293,7 @@ def kb_search(matter_id: str, query: str, documents: list[dict], top_k: int = 5)
                 _kb_cache[matter_id] = (fp, BM25Index([]))
             else:
                 _kb_cache[matter_id] = (fp, BM25Index(flat))
+            _kb_cache_evict_locked()
         index = _kb_cache[matter_id][1]
     hits = index.search(query, top_k=top_k)
     return {

@@ -1,13 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type {
-  Session,
-  Message,
-  StepStartedEvent,
-  StepFinishedEvent,
-  AgUiEvent,
-  RunFinishedEvent,
-} from '../types/legal'
+import type { Session, Message, StepStartedEvent, StepFinishedEvent, AgUiEvent, RunFinishedEvent } from '../types/legal'
 import { backend } from '../lib/backend'
 
 /**
@@ -17,7 +10,7 @@ import { backend } from '../lib/backend'
 export interface RunStep {
   stepId: string
   stepIndex: number
-  kind: StepStartedEvent['kind']        // 'tool' | 'think' | 'reply' | 'final'
+  kind: StepStartedEvent['kind'] // 'tool' | 'think' | 'reply' | 'final'
   title: string
   description?: string
   status: 'running' | 'ok' | 'failed' | 'skipped'
@@ -64,27 +57,36 @@ const MESSAGES_PREFIX = 'lawclaw_msgs_'
 function loadSessions(): Session[] {
   try {
     const raw = localStorage.getItem(SESSIONS_KEY)
-    return raw ? JSON.parse(raw, (k, v) => k === 'createdAt' || k === 'updatedAt' ? new Date(v) : v) : []
+    return raw ? JSON.parse(raw, (k, v) => (k === 'createdAt' || k === 'updatedAt' ? new Date(v) : v)) : []
   } catch {
     return []
   }
 }
 
 function saveSessions(sessions: Session[]) {
-  localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions))
+  try {
+    localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions))
+  } catch (e) {
+    // 配额超限不能静默：会话历史只存在于内存，重启即丢
+    console.warn('[chat] 会话保存失败（localStorage 配额或不可写）:', e)
+  }
 }
 
 function loadMessages(sessionId: string): Message[] {
   try {
     const raw = localStorage.getItem(MESSAGES_PREFIX + sessionId)
-    return raw ? JSON.parse(raw, (k, v) => k === 'timestamp' ? new Date(v) : v) : []
+    return raw ? JSON.parse(raw, (k, v) => (k === 'timestamp' ? new Date(v) : v)) : []
   } catch {
     return []
   }
 }
 
 function saveMessages(sessionId: string, messages: Message[]) {
-  localStorage.setItem(MESSAGES_PREFIX + sessionId, JSON.stringify(messages))
+  try {
+    localStorage.setItem(MESSAGES_PREFIX + sessionId, JSON.stringify(messages))
+  } catch (e) {
+    console.warn(`[chat] 会话 ${sessionId} 消息保存失败（localStorage 配额或不可写）:`, e)
+  }
 }
 
 export const useChatStore = defineStore('chat', () => {
@@ -113,13 +115,9 @@ export const useChatStore = defineStore('chat', () => {
   /** 最近一次 run 是否以错误收场（驱动步骤面板的失败态展示） */
   const runFailed = ref(false)
   /** 当前 run 是否正在进行中 */
-  const runInProgress = computed(() =>
-    steps.value.some(s => s.status === 'running')
-  )
+  const runInProgress = computed(() => steps.value.some(s => s.status === 'running'))
   /** 已完成步骤数 */
-  const completedSteps = computed(() =>
-    steps.value.filter(s => s.status !== 'running').length
-  )
+  const completedSteps = computed(() => steps.value.filter(s => s.status !== 'running').length)
   /** 总步骤数（run 进行中会持续增加，结束时锁定） */
   const totalSteps = computed(() => steps.value.length)
   /** Run 进度百分比（1-100） */
@@ -167,25 +165,32 @@ export const useChatStore = defineStore('chat', () => {
         lastToolStep.toolCallId = evt.toolCallId
         lastToolStep.toolName = evt.toolName
       }
-    }
-    else if (evt.type === 'TOOL_CALL_RESULT') {
+    } else if (evt.type === 'TOOL_CALL_RESULT') {
       const step = list.find(s => s.toolCallId === evt.toolCallId)
       if (step) {
         step.toolPreview = evt.preview || ''
       }
-    }
-    else if (evt.type === 'RUN_STARTED') {
+    } else if (evt.type === 'RUN_STARTED') {
       currentRunId.value = evt.runId
       runFailed.value = false
-    }
-    else if (evt.type === 'RUN_ERROR') {
+    } else if (evt.type === 'RUN_ERROR') {
       // 官方规范：错误终止以 RUN_ERROR 结束（与 RUN_FINISHED 互斥，不会再收到 FINISHED）
       runFailed.value = true
       for (const s of list) {
         if (s.status === 'running') s.status = 'failed'
       }
-    }
-    else if (evt.type === 'RUN_FINISHED') {
+      // 消息本体同步标记失败：气泡红框 + 重新发送提示行不依赖 RPC 最终结果才出现，
+      // 且切会话重置 runFailed 后失败态仍保留在消息上
+      const msgs =
+        runningSessionId.value && runningSessionId.value !== activeSessionId.value
+          ? sessionBuffers.get(runningSessionId.value)
+          : messages.value
+      const last = msgs?.[msgs.length - 1]
+      if (last && last.role === 'assistant') {
+        if (!last.content) last.content = evt.message || '请求失败'
+        last.error = true
+      }
+    } else if (evt.type === 'RUN_FINISHED') {
       // 收尾：确保所有 running step 都标记完成（错误终止走 RUN_ERROR 分支，不会到这里）
       const failed = false
       runFailed.value = failed
@@ -201,13 +206,16 @@ export const useChatStore = defineStore('chat', () => {
     const owner = runningSessionId.value
     if (!owner || owner === activeSessionId.value) return steps.value
     let arr = sessionSteps.get(owner)
-    if (!arr) { arr = []; sessionSteps.set(owner, arr) }
+    if (!arr) {
+      arr = []
+      sessionSteps.set(owner, arr)
+    }
     return arr
   }
   function _resetRunState() {
     steps.value = []
     const id = activeSessionId.value
-    if (id) sessionSteps.set(id, [])   // 该会话开始新一次 run：清掉它上一轮的步骤缓存
+    if (id) sessionSteps.set(id, []) // 该会话开始新一次 run：清掉它上一轮的步骤缓存
     currentRunId.value = null
     toolActivity.value = null
     runFailed.value = false
@@ -215,9 +223,6 @@ export const useChatStore = defineStore('chat', () => {
 
   // Per-request abort flag — set by abortCurrentMessage, checked in .then() and callbacks
   let currentAbortFlag: { value: boolean } | null = null
-
-  // ── Abort support ──
-  let abortRequested = false
 
   function setPendingPrompt(text: string) {
     pendingPrompt.value = text
@@ -243,7 +248,13 @@ export const useChatStore = defineStore('chat', () => {
     pendingSkill.value = s
   }
 
-  function consumePendingSkill(): { id: string; name: string; icon: string; prompt: string; rpcMethod?: string } | null {
+  function consumePendingSkill(): {
+    id: string
+    name: string
+    icon: string
+    prompt: string
+    rpcMethod?: string
+  } | null {
     const val = pendingSkill.value
     pendingSkill.value = null
     return val
@@ -251,12 +262,8 @@ export const useChatStore = defineStore('chat', () => {
 
   const activeSession = computed(() => sessions.value.find(s => s.id === activeSessionId.value) || null)
 
-  const sessionsForMatter = computed(() => (matterId: string) =>
-    sessions.value.filter(s => s.matterId === matterId)
-  )
-
   const recentSessions = computed(() =>
-    [...sessions.value].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()).slice(0, 10)
+    [...sessions.value].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()).slice(0, 10),
   )
 
   function ensureFirstSession() {
@@ -299,7 +306,10 @@ export const useChatStore = defineStore('chat', () => {
     switchSession(s.id)
   }
 
-  function newSessionWithExpert(role: { id: string; name: string; systemPrompt: string; samplePrompt: string }, matterId?: string) {
+  function newSessionWithExpert(
+    role: { id: string; name: string; systemPrompt: string; samplePrompt: string },
+    matterId?: string,
+  ) {
     const s = defaultSession(matterId)
     s.title = role.name
     s.systemPrompt = role.systemPrompt
@@ -331,7 +341,7 @@ export const useChatStore = defineStore('chat', () => {
     if (idx === -1) return
     sessions.value.splice(idx, 1)
     localStorage.removeItem(MESSAGES_PREFIX + id)
-    sessionSteps.delete(id)      // 连同该会话的运行缓冲一起清掉
+    sessionSteps.delete(id) // 连同该会话的运行缓冲一起清掉
     sessionBuffers.delete(id)
     saveSessions(sessions.value)
     if (id === activeSessionId.value) {
@@ -388,10 +398,15 @@ export const useChatStore = defineStore('chat', () => {
     return s
   }
 
-  backend.onStatusChange = (v) => { connected.value = v }
+  backend.onStatusChange = v => {
+    connected.value = v
+  }
 
   async function connectBackend() {
-    if (backend.isConnected()) { connected.value = true; return }
+    if (backend.isConnected()) {
+      connected.value = true
+      return
+    }
     try {
       await backend.connect()
       connected.value = true
@@ -407,8 +422,11 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   async function abortCurrentMessage(apiKey?: string, baseUrl?: string, model?: string) {
-    abortRequested = true
-    // P0-2: 真中止 —— 调用后端 abort RPC，触发 threading.Event + interrupt
+    // ① 置位本次 run 的中止标志（.then 与各回调据此丢弃旧 run 的残留事件）
+    if (currentAbortFlag) currentAbortFlag.value = true
+    // ② 丢弃流式回调：停止后旧 run 的残留事件不得经新 run 的回调串进新会话
+    backend.cancelStream()
+    // ③ 通知后端真中止（threading 中断 + abort 事件）
     try {
       await backend.abort(apiKey, baseUrl, model)
     } catch {
@@ -417,9 +435,7 @@ export const useChatStore = defineStore('chat', () => {
     loading.value = false
     // 中止目标按 run 归属会话定位（用户可能已切走）
     const runId = runningSessionId.value
-    const target = (runId && activeSessionId.value !== runId)
-      ? sessionBuffers.get(runId)
-      : messages.value
+    const target = runId && activeSessionId.value !== runId ? sessionBuffers.get(runId) : messages.value
     if (target) {
       const lastMsg = target[target.length - 1]
       if (lastMsg && lastMsg.role === 'assistant' && lastMsg.content === '') {
@@ -427,7 +443,10 @@ export const useChatStore = defineStore('chat', () => {
       }
     }
     if (runId) {
-      saveMessages(runId, (runId === activeSessionId.value) ? messages.value : (sessionBuffers.get(runId) || loadMessages(runId)))
+      saveMessages(
+        runId,
+        runId === activeSessionId.value ? messages.value : sessionBuffers.get(runId) || loadMessages(runId),
+      )
     }
   }
 
@@ -463,11 +482,16 @@ export const useChatStore = defineStore('chat', () => {
     saveMessages(activeSessionId.value!, messages.value)
   }
 
-  async function sendMessage(text: string, apiKey?: string, baseUrl?: string, model?: string, skillId?: string, files?: { name: string; data: string }[]) {
+  async function sendMessage(
+    text: string,
+    apiKey?: string,
+    baseUrl?: string,
+    model?: string,
+    skillId?: string,
+    files?: { name: string; data: string }[],
+  ) {
     if (!text.trim() || loading.value) return
 
-    // Reset abort flag
-    abortRequested = false
     // Reset AG-UI run state (steps / progress bar)
     _resetRunState()
 
@@ -579,8 +603,11 @@ export const useChatStore = defineStore('chat', () => {
           const text = [m.description, m.caseCause, m.stage].filter(Boolean).join('；')
           if (text && text.length > 8) {
             expItems.push({
-              id: m.id, matterTitle: m.client || m.title,
-              title: m.title, text, type: 'matter',
+              id: m.id,
+              matterTitle: m.client || m.title,
+              title: m.title,
+              text,
+              type: 'matter',
             })
           }
         }
@@ -594,7 +621,9 @@ export const useChatStore = defineStore('chat', () => {
             expItems.push({
               id: e.id,
               matterTitle: matterStore.matters.find(m => m.id === e.matterId)?.title || '本案',
-              title: e.title, text: e.description || '', type: e.type,
+              title: e.title,
+              text: e.description || '',
+              type: e.type,
               date: e.createdAt instanceof Date ? e.createdAt.toISOString() : String(e.createdAt),
             })
           }
@@ -608,7 +637,7 @@ export const useChatStore = defineStore('chat', () => {
       // 取当前 messages（不含刚 push 的用户消息），转为 OpenAI 格式
       // 后端会自动截断到最近 20 轮
       const historyForBackend = messages.value
-        .slice(0, -1)  // 排除刚 push 的用户消息
+        .slice(0, -1) // 排除刚 push 的用户消息
         .filter(m => m.content && m.content.trim() && m.content !== '⏸️ 已中止')
         .map(m => ({
           role: m.role === 'user' ? 'user' : 'assistant',
@@ -650,9 +679,7 @@ export const useChatStore = defineStore('chat', () => {
                 .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                 .slice(0, 3)
               if (activeDls.length > 0) {
-                ctx.activeDeadlines = activeDls
-                  .map(d => `${d.type}:${d.date}`)
-                  .join('|')
+                ctx.activeDeadlines = activeDls.map(d => `${d.type}:${d.date}`).join('|')
               }
             }
             if (Object.keys(ctx).length > 0) {
@@ -686,23 +713,21 @@ export const useChatStore = defineStore('chat', () => {
       const abortBaseUrl = baseUrl || ''
       const abortModel = model || ''
 
-      await backend.chatStream(
-        text.trim(),
-        cleanParams,
-        {
+      await backend
+        .chatStream(text.trim(), cleanParams, {
           onAgUiEvent: (evt: AgUiEvent) => {
             if (myAbortFlag.value) return
             _applyAgUiEvent(evt)
           },
-          onStepStarted: (step) => {
+          onStepStarted: step => {
             if (myAbortFlag.value) return
             _applyStepStarted(step)
           },
-          onStepFinished: (step) => {
+          onStepFinished: step => {
             if (myAbortFlag.value) return
             _applyStepFinished(step)
           },
-          onRunFinished: (evt) => {
+          onRunFinished: evt => {
             if (myAbortFlag.value) return
             _applyAgUiEvent(evt)
           },
@@ -738,25 +763,25 @@ export const useChatStore = defineStore('chat', () => {
               msgs[idx] = { ...msgs[idx], reasoning: existing + text }
             }
           },
-        },
-      ).then((result) => {
-        if (myAbortFlag.value) return
-        if (!assistantMsgCreated) {
-          ensureAssistantMsg()
-        }
-        toolActivity.value = null
-        const msgs = runMessages()
-        const idx = msgs.findIndex(m => m.id === assistantMsgId)
-        if (idx !== -1) {
-          msgs[idx] = {
-            ...msgs[idx],
-            content: result.response || msgs[idx].content,
-            citations: result.citations as any,
-            error: (result as { error?: boolean }).error === true,
-            contextStats: (result as { context_stats?: Message['contextStats'] }).context_stats,
+        })
+        .then(result => {
+          if (myAbortFlag.value) return
+          if (!assistantMsgCreated) {
+            ensureAssistantMsg()
           }
-        }
-      })
+          toolActivity.value = null
+          const msgs = runMessages()
+          const idx = msgs.findIndex(m => m.id === assistantMsgId)
+          if (idx !== -1) {
+            msgs[idx] = {
+              ...msgs[idx],
+              content: result.response || msgs[idx].content,
+              citations: result.citations as any,
+              error: (result as { error?: boolean }).error === true,
+              contextStats: (result as { context_stats?: Message['contextStats'] }).context_stats,
+            }
+          }
+        })
     } catch (e) {
       console.error('sendMessage error:', e)
       toolActivity.value = null
@@ -767,9 +792,10 @@ export const useChatStore = defineStore('chat', () => {
         const errMsg = e instanceof Error ? e.message : '未知错误'
         msgs[idx] = {
           ...msgs[idx],
-          content: (errMsg === 'Backend not connected' || errMsg.includes('启动中'))
-            ? '后端引擎尚未就绪（启动通常需要 10–30 秒）。请稍候重试；若持续失败，请查看安装目录下的 launcher.log。'
-            : `请求失败：${errMsg}`,
+          content:
+            errMsg === 'Backend not connected' || errMsg.includes('启动中')
+              ? '后端引擎尚未就绪（启动通常需要 10–30 秒）。请稍候重试；若持续失败，请查看安装目录下的 launcher.log。'
+              : `请求失败：${errMsg}`,
           error: true,
         }
       }
@@ -803,16 +829,45 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   return {
-    sessions, activeSessionId, messages, loading, connected, pendingPrompt,
-    toolActivity, runningSessionId,
+    sessions,
+    activeSessionId,
+    messages,
+    loading,
+    connected,
+    pendingPrompt,
+    toolActivity,
+    runningSessionId,
     // ── AG-UI 协议新状态（P0/P1） ──
-    steps, currentRunId, runInProgress, runFailed, completedSteps, totalSteps, runProgressPercent,
-    activeSession, sessionsForMatter, recentSessions,
+    steps,
+    currentRunId,
+    runInProgress,
+    runFailed,
+    completedSteps,
+    totalSteps,
+    runProgressPercent,
+    activeSession,
+    recentSessions,
     ensureFirstSession,
-    switchSession, newSession, newSessionWithExpert, setExpertRole, clearExpertRole, deleteSession, renameSession, linkSessionToMatter, findOrCreateSessionForMatter, unlinkMatter,
-    connectBackend, sendMessage, saveCurrentMessages,
-    setPendingPrompt, consumePendingPrompt, setPendingSkill, consumePendingSkill,
-    setPendingPrefill, consumePendingPrefill,
-    abortCurrentMessage, abortRequested, editMessage,
+    switchSession,
+    newSession,
+    newSessionWithExpert,
+    setExpertRole,
+    clearExpertRole,
+    deleteSession,
+    renameSession,
+    linkSessionToMatter,
+    findOrCreateSessionForMatter,
+    unlinkMatter,
+    connectBackend,
+    sendMessage,
+    saveCurrentMessages,
+    setPendingPrompt,
+    consumePendingPrompt,
+    setPendingSkill,
+    consumePendingSkill,
+    setPendingPrefill,
+    consumePendingPrefill,
+    abortCurrentMessage,
+    editMessage,
   }
 })

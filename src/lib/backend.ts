@@ -24,9 +24,16 @@ type WireMessage = {
 
 let requestId = 0
 
+/** call() 的在途请求条目（timer 为可选超时句柄，settle 时须清除） */
+type PendingEntry = {
+  resolve: (v: unknown) => void
+  reject: (e: Error) => void
+  timer?: ReturnType<typeof setTimeout> | null
+}
+
 export class BackendClient {
   private ws: WebSocket | null = null
-  private pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>()
+  private pending = new Map<number, PendingEntry>()
   private url: string
   connected = false
   private pendingConnect: Promise<void> | null = null
@@ -35,7 +42,6 @@ export class BackendClient {
   onStatusChange?: (connected: boolean) => void
 
   /** 服务端是否支持 AG-UI 协议（根据握手消息 ag_ui_version 判定） */
-  serverAgUiVersion: string | null = null
 
   /** Registered streaming callback — set per chatStream call */
   private streamCb: ChatStreamCallbacks | null = null
@@ -63,7 +69,10 @@ export class BackendClient {
 
   connect(): Promise<void> {
     if (this.pendingConnect) return this.pendingConnect
-    if (this.ws) { this.ws.onclose = null; this.ws.close() }
+    if (this.ws) {
+      this.ws.onclose = null
+      this.ws.close()
+    }
     this.pendingConnect = new Promise<void>((resolve, reject) => {
       try {
         this.ws = new WebSocket(this.url)
@@ -77,7 +86,7 @@ export class BackendClient {
         this.pendingConnect = null
         resolve()
       }
-      this.ws.onmessage = (event) => {
+      this.ws.onmessage = event => {
         let data: WireMessage
         try {
           data = JSON.parse(event.data) as WireMessage
@@ -88,7 +97,6 @@ export class BackendClient {
 
         // ── 握手 ready 消息（含协议版本号） ──
         if (data.event === 'ready') {
-          this.serverAgUiVersion = (data.ag_ui_version as string) || null
           return
         }
 
@@ -140,6 +148,7 @@ export class BackendClient {
           const pending = this.pending.get(data.id)
           if (pending) {
             this.pending.delete(data.id)
+            if (pending.timer) clearTimeout(pending.timer)
             if (data.error) {
               pending.reject(new Error(data.error.message))
             } else {
@@ -156,7 +165,10 @@ export class BackendClient {
       this.ws.onclose = () => {
         this.setConnected(false)
         this.pendingConnect = null
-        for (const [, p] of this.pending) p.reject(new Error('Connection closed'))
+        for (const [, p] of this.pending) {
+          if (p.timer) clearTimeout(p.timer)
+          p.reject(new Error('Connection closed'))
+        }
         this.pending.clear()
         this.scheduleReconnect()
       }
@@ -172,15 +184,36 @@ export class BackendClient {
     }, 3000)
   }
 
-  async call<T = unknown>(method: string, params: Record<string, unknown> = {}): Promise<T> {
+  async call<T = unknown>(method: string, params: Record<string, unknown> = {}, timeoutMs?: number): Promise<T> {
     if (!this.connected) {
       await this.waitForConnect()
     }
     const id = ++requestId
     return new Promise((resolve, reject) => {
-      this.pending.set(id, { resolve: resolve as (v: unknown) => void, reject })
-      this.ws!.send(JSON.stringify({ jsonrpc: '2.0', id, method, params }))
+      const entry: PendingEntry = { resolve: resolve as (v: unknown) => void, reject }
+      if (timeoutMs && timeoutMs > 0) {
+        entry.timer = setTimeout(() => {
+          this.pending.delete(id)
+          reject(new Error(`${method} 请求超时（${Math.round(timeoutMs / 1000)} 秒）`))
+        }, timeoutMs)
+      }
+      this.pending.set(id, entry)
+      try {
+        this.ws!.send(JSON.stringify({ jsonrpc: '2.0', id, method, params }))
+      } catch (e) {
+        this.pending.delete(id)
+        if (entry.timer) clearTimeout(entry.timer)
+        reject(e instanceof Error ? e : new Error(String(e)))
+      }
     }) as Promise<T>
+  }
+
+  /**
+   * 丢弃当前流式回调（「停止」按钮用）。停止后旧 run 仍可能有残留事件，
+   * 若不清掉回调，这些事件会经新 run 的回调串进新会话（内容复活/串台）。
+   */
+  cancelStream(): void {
+    this.streamCb = null
   }
 
   /**
@@ -216,11 +249,14 @@ export class BackendClient {
     // 导入整套 hermes 栈；配置了元典 Key 时还会做 MCP 发现（走网络）。原来只等 10 秒，
     // 用户在启动过程中点「测试连接」就会看到「后端引擎未启动」这种误导性提示
     // （实测本机后端 8.0 秒才监听、webview 8.3 秒才连上，正好卡在 10 秒边界内）。
-    for (let i = 0; i < 200; i++) {          // 40s
+    for (let i = 0; i < 200; i++) {
+      // 40s
       await new Promise(r => setTimeout(r, 200))
       if (this.connected) return
     }
-    throw new Error('后端引擎仍在启动中（首次启动约 10–30 秒）。请稍候重试；若持续失败，请查看安装目录下的 launcher.log。')
+    throw new Error(
+      '后端引擎仍在启动中（首次启动约 10–30 秒）。请稍候重试；若持续失败，请查看安装目录下的 launcher.log。',
+    )
   }
 
   async initialize(): Promise<{ status: string; version: string; name: string }> {
@@ -228,29 +264,46 @@ export class BackendClient {
   }
 
   /** 真实调用一次最小补全验证 API 可用性（比 initialize 的"已配置"检查可靠） */
-  async testLlm(apiKey?: string, baseUrl?: string, model?: string): Promise<{
-    ok: boolean; model: string; latency_ms?: number; message?: string; sample?: string
+  async testLlm(
+    apiKey?: string,
+    baseUrl?: string,
+    model?: string,
+  ): Promise<{
+    ok: boolean
+    model: string
+    latency_ms?: number
+    message?: string
+    sample?: string
   }> {
     return this.call('test_llm', { api_key: apiKey, base_url: baseUrl, model })
   }
 
   /** 文档抽取适配层：PDF/DOCX/XLSX → 全文文本（base64 数据入，文本出） */
-  async parseDocument(filename: string, dataBase64: string): Promise<{
-    ok: boolean; text?: string; extractor?: string; chars?: number; error?: string
+  async parseDocument(
+    filename: string,
+    dataBase64: string,
+  ): Promise<{
+    ok: boolean
+    text?: string
+    extractor?: string
+    chars?: number
+    error?: string
   }> {
     return this.call('parse_document', { filename, data_base64: dataBase64 })
   }
 
   /** Markdown 文书 → Word (.docx)，返回 base64 文件数据 */
-  async exportDocx(title: string, markdown: string, matterTitle?: string): Promise<{
-    ok: boolean; filename?: string; data?: string; error?: string
+  async exportDocx(
+    title: string,
+    markdown: string,
+    matterTitle?: string,
+  ): Promise<{
+    ok: boolean
+    filename?: string
+    data?: string
+    error?: string
   }> {
     return this.call('export_docx', { title, markdown, matter_title: matterTitle || '' })
-  }
-
-  /** Legacy non-streaming chat — kept for backward compat */
-  async chat(message: string): Promise<{ response: string }> {
-    return this.call('chat', { message })
   }
 
   async legalSearch(query: string, searchType = 'law'): Promise<{ results: unknown[] }> {
@@ -258,7 +311,10 @@ export class BackendClient {
   }
 
   /** 验证法条是否现行有效 */
-  async verifyCitation(law: string, article = ''): Promise<{
+  async verifyCitation(
+    law: string,
+    article = '',
+  ): Promise<{
     valid: boolean | null
     deprecated?: boolean
     bbbs?: string
@@ -277,21 +333,30 @@ export class BackendClient {
 
   /** 根据案件阶段获取推荐技能 */
   async recommendSkillsForStage(stage: string): Promise<{
-    stage: string; recommended_skills: Array<{ id: string; name: string; icon: string; reason: string }>
+    stage: string
+    recommended_skills: Array<{ id: string; name: string; icon: string; reason: string }>
   }> {
     return this.call('recommend_skills_for_stage', { stage })
   }
 
   /** 计算诉讼时效 */
-  async calcLimitationPeriod(caseType: string, eventDate: string): Promise<{
-    deadline?: string; days_remaining?: number; status?: string; law_basis?: string; note?: string; error?: string
+  async calcLimitationPeriod(
+    caseType: string,
+    eventDate: string,
+  ): Promise<{
+    deadline?: string
+    days_remaining?: number
+    status?: string
+    law_basis?: string
+    note?: string
+    error?: string
   }> {
     return this.call('calc_limitation_period', { case_type: caseType, event_date: eventDate })
   }
 
   /** 真中止当前 LLM 调用（P0-2） */
   async abort(apiKey?: string, baseUrl?: string, model?: string): Promise<{ status: string }> {
-    return this.call('abort', { api_key: apiKey || '', base_url: baseUrl || '', model: model || '' })
+    return this.call('abort', { api_key: apiKey || '', base_url: baseUrl || '', model: model || '' }, 15000)
   }
 
   /** 值守助手：同步案件摘要（供 cron 晨报扫描） */
@@ -301,7 +366,8 @@ export class BackendClient {
 
   /** 值守助手：即时扫描状态 */
   async watchdogStatus(): Promise<{
-    syncedAt: string | null; matters: number
+    syncedAt: string | null
+    matters: number
     alerts: Array<{ kind: string; matter: string; detail: string; date: string; days: number }>
     alertText: string
   }> {
@@ -309,18 +375,32 @@ export class BackendClient {
   }
 
   /** 值守助手：最近晨报/周报 */
-  async watchdogBriefing(job = 'lawclaw-morning-briefing'): Promise<{ found: boolean; output?: string; status?: string; at?: string; error?: string }> {
+  async watchdogBriefing(
+    job = 'lawclaw-morning-briefing',
+  ): Promise<{ found: boolean; output?: string; status?: string; at?: string; error?: string }> {
     return this.call('watchdog_briefing', { job })
   }
 
   /** 值守助手：立即触发晨报生成 */
-  async watchdogRunNow(job = 'lawclaw-morning-briefing'): Promise<{ triggered: boolean; job?: string; error?: string }> {
+  async watchdogRunNow(
+    job = 'lawclaw-morning-briefing',
+  ): Promise<{ triggered: boolean; job?: string; error?: string }> {
     return this.call('watchdog_run_now', { job })
   }
 
   /** 文书细节校对（M1-M8 规则 + 法条时效验证） */
-  async reviewDocument(text: string, checkCitations = true): Promise<{
-    issues: Array<{ module: string; severity: string; message: string; suggestion: string; line: number; excerpt: string }>
+  async reviewDocument(
+    text: string,
+    checkCitations = true,
+  ): Promise<{
+    issues: Array<{
+      module: string
+      severity: string
+      message: string
+      suggestion: string
+      line: number
+      excerpt: string
+    }>
     stats: { chars: number; lines: number; by_module: Record<string, number>; by_severity: Record<string, number> }
   }> {
     return this.call('review_document', { text, check_citations: checkCitations })
@@ -332,13 +412,29 @@ export class BackendClient {
   }
 
   /** 期限智能引擎：考虑节假日顺延（P1-3） */
-  async calcDeadline(startDate: string, days: number, deadlineType: string = 'custom', skipHolidays = true): Promise<{
-    deadline?: string; original_deadline?: string; deferred?: boolean; deferred_reason?: string
-    start_date?: string; days?: number; deadline_type?: string
-    days_remaining?: number; status?: string; law_basis?: string; error?: string
+  async calcDeadline(
+    startDate: string,
+    days: number,
+    deadlineType: string = 'custom',
+    skipHolidays = true,
+  ): Promise<{
+    deadline?: string
+    original_deadline?: string
+    deferred?: boolean
+    deferred_reason?: string
+    start_date?: string
+    days?: number
+    deadline_type?: string
+    days_remaining?: number
+    status?: string
+    law_basis?: string
+    error?: string
   }> {
     return this.call('calc_deadline', {
-      start_date: startDate, days, deadline_type: deadlineType, skip_holidays: skipHolidays
+      start_date: startDate,
+      days,
+      deadline_type: deadlineType,
+      skip_holidays: skipHolidays,
     })
   }
 
@@ -347,8 +443,13 @@ export class BackendClient {
     this.setConnected(false)
     this.streamCb = null
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
-    if (this.pendingConnect) { this.pendingConnect = null }
-    if (this.ws) { this.ws.onclose = null; this.ws.close() }
+    if (this.pendingConnect) {
+      this.pendingConnect = null
+    }
+    if (this.ws) {
+      this.ws.onclose = null
+      this.ws.close()
+    }
   }
 }
 

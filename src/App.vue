@@ -28,7 +28,6 @@
     >
     <div class="app-body">
       <el-aside
-        v-if="showSidebar"
         :width="asideW + 'px'"
         :style="{ '--sb-w': asideW + 'px' }"
         class="app-sidebar"
@@ -168,7 +167,6 @@
               <CaseListView
                 v-else-if="currentView === 'cases' && caseViewStore.subView === 'list'"
                 @select-case="onOpenMatter"
-                @new-chat="onNewChat"
               />
               <CaseDetailView
                 v-else-if="currentView === 'cases' && caseViewStore.subView === 'detail'"
@@ -279,6 +277,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useSetupStore } from './stores/setup'
 import { useChatStore } from './stores/chat'
 import { useMatterStore } from './stores/matter'
+import { useScheduleStore } from './stores/schedule'
 import { useCaseViewStore } from './stores/caseView'
 import { useUiStore, SIDEBAR_W } from './stores/ui'
 import SplashScreen from './components/SplashScreen.vue'
@@ -302,6 +301,7 @@ import type { QuickActionId, AppView } from './types/legal'
 const setupStore = useSetupStore()
 const chatStore = useChatStore()
 const matterStore = useMatterStore()
+const scheduleStore = useScheduleStore()
 const caseViewStore = useCaseViewStore()
 const uiStore = useUiStore()
 const bootstrap = useAppBootstrap()
@@ -311,7 +311,6 @@ const currentView = ref<AppView>('dashboard')
 /** 开发工具（通知测试）只在 dev 构建可见 */
 const isDevBuild = import.meta.env.DEV
 
-const showSidebar = ref(true)
 const showSessionManager = ref(false)
 const showSearch = ref(false)
 const showLimitationCalc = ref(false)
@@ -537,7 +536,19 @@ function onQuickAction(id: QuickActionId) {
 }
 
 function onLimitationAddToCalendar(date: string, title: string) {
-  ElMessage.success(`诉讼时效提醒已创建：${title}（${date}）`)
+  // 真实写入日程（旧版只弹成功提示，日程/通知里什么都没有——对律师是失权级误导）
+  try {
+    scheduleStore.addItem({
+      title: `⏳ ${title}`,
+      dateTime: `${date}T09:00:00`,
+      type: 'deadline',
+      completed: false,
+      note: '由诉讼时效计算器创建',
+    })
+    ElMessage.success(`诉讼时效提醒已创建：${title}（${date}）`)
+  } catch (e) {
+    ElMessage.error('创建提醒失败，请到日程页手动添加')
+  }
 }
 
 function onQuickQuestion(text: string) {
@@ -612,12 +623,6 @@ function timeAgo(date: Date) {
   return `${Math.floor(diff / 86400000)}天前`
 }
 
-// 保持 showSidebar 与折叠态同步（当侧栏宽度已经被折叠/展开时，显式显示侧栏）
-watch(
-  () => uiStore.sidebarCollapsed,
-  () => { showSidebar.value = true },
-  { immediate: true }
-)
 </script>
 
 <style>

@@ -259,11 +259,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { Folder, ChatDotRound, ArrowRight, FolderOpened, Calendar, Tools, Search, Promotion, AlarmClock } from '@element-plus/icons-vue'
 import { backend } from '../lib/backend'
 import { markRaw } from 'vue'
-import { marked } from 'marked'
+import { renderMarkdown } from '../lib/markdown'
 import { ElMessage } from 'element-plus'
 import { useMatterStore } from '../stores/matter'
 import { useChatStore } from '../stores/chat'
@@ -315,11 +315,12 @@ const watchdog = ref<{ syncedAt: string | null; matters: number; alerts: Array<{
 const watchdogVisible = ref(false)
 const briefing = ref<string | null>(null)
 const briefingLoading = ref(false)
-const briefingHtml = computed(() => {
-  try {
-    return marked.parse(briefing.value || '') as string
-  } catch { return briefing.value || '' }
-})
+// 晨报内容含案件数据与 LLM 输出（不可信）——必须走统一消毒出口，禁止裸 marked.parse
+const briefingHtml = computed(() => renderMarkdown(briefing.value || ''))
+
+let watchdogRetries = 0
+const WATCHDOG_MAX_RETRIES = 3
+let watchdogTimer: ReturnType<typeof setTimeout> | null = null
 
 async function syncWatchdog() {
   try {
@@ -334,12 +335,20 @@ async function syncWatchdog() {
     watchdogVisible.value = true
     const b = await backend.watchdogBriefing()
     if (b.found && b.output) briefing.value = b.output
+    watchdogRetries = 0
   } catch (e: any) {
-    // 值守为增强功能，静默降级；冷启动 WS 就绪竞态时重试一次
-    (window as any).__watchdogErr = String(e?.message || e).slice(0, 120)
-    setTimeout(() => { void syncWatchdog() }, 3000)
+    // 值守为增强功能，静默降级；冷启动 WS 就绪竞态重试，但有上限与退避
+    // （旧版每 3 秒无限重试且不随卸载清理，离线模式下永久空转）
+    if (watchdogRetries < WATCHDOG_MAX_RETRIES) {
+      watchdogRetries++
+      watchdogTimer = setTimeout(() => { void syncWatchdog() }, 3000 * watchdogRetries)
+    }
   }
 }
+
+onUnmounted(() => {
+  if (watchdogTimer) { clearTimeout(watchdogTimer); watchdogTimer = null }
+})
 
 async function runBriefing() {
   if (!watchdog.value.alerts.length) {

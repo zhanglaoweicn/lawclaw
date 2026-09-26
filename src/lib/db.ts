@@ -3,8 +3,13 @@ const DB_VERSION = 2
 const FILES_STORE = 'files'
 const TIMELINE_STORE = 'timeline'
 
+// 连接单例：每个操作各自 open 且从不 close 会累积句柄；升 DB_VERSION 时
+// 未关闭的旧连接还会触发 onblocked 死等
+let dbPromise: Promise<IDBDatabase> | null = null
+
 function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
+  if (dbPromise) return dbPromise
+  dbPromise = new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION)
     req.onupgradeneeded = () => {
       const db = req.result
@@ -21,8 +26,16 @@ function openDB(): Promise<IDBDatabase> {
       }
     }
     req.onsuccess = () => resolve(req.result)
-    req.onerror = () => reject(req.error)
+    req.onerror = () => {
+      dbPromise = null
+      reject(req.error)
+    }
+    req.onblocked = () => {
+      dbPromise = null
+      reject(new Error('IndexedDB 被其他版本阻塞，请关闭旧页面后重试'))
+    }
   })
+  return dbPromise
 }
 
 export interface FileRecord {
@@ -79,7 +92,10 @@ export async function updateFile(id: string, patch: Partial<FileRecord>): Promis
     const getReq = store.get(id)
     getReq.onsuccess = () => {
       const rec = getReq.result
-      if (!rec) { resolve(); return }
+      if (!rec) {
+        resolve()
+        return
+      }
       store.put({ ...rec, ...patch })
     }
     tx.oncomplete = () => resolve()

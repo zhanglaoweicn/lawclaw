@@ -347,8 +347,8 @@ function selectSubRule(rule: LimitationRule, sub: SubTypeRule) {
 function addToCalendar() {
   if (result.value?.deadline) {
     const label = buildDisplayLabel()
+    // 成功提示由 App.vue 在真正写入日程后给出（这里不再抢发假成功 toast）
     emit('add-to-calendar', result.value.deadline, `诉讼时效届满 - ${label}`)
-    ElMessage.success('已添加到日历提醒')
     visible.value = false
   }
 }

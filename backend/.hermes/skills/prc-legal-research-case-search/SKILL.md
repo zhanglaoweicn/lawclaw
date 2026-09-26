@@ -45,7 +45,7 @@ https://open.chineselaw.com/，支持邮箱 yuandianzonghe@thunisoft.com）。
 从对话上下文中获取用户的查询需求，无需用户重复输入。
 
 **已知案号**：
-- 直接调用 `yuandian_rh_case_details`（`type="ptal"`），若无结果再试 `type="qwal"`。
+- 直接调用 `yuandian_get_case_detail`（`type="ptal"`），若无结果再试 `type="qwal"`。
 
 **主题案例检索**：
 - 提炼案件关键词（案由、争议焦点、特殊事实情节）。
@@ -56,10 +56,10 @@ https://open.chineselaw.com/，支持邮箱 yuandianzonghe@thunisoft.com）。
   - `ja_start` / `ja_end`：裁判日期范围。
 
 **权威案例优先**：
-- 用户提到"指导性案例" / "典型案例"或需要最权威判例时，优先调用 `yuandian_rh_qwal_search`。
+- 用户提到"指导性案例" / "典型案例"或需要最权威判例时，优先调用 `yuandian_search_authoritative_cases`。
 
 **事实相似判例**：
-- 用户描述较复杂的事实情形，难以提炼精确关键词时，使用 `yuandian_case_vector_search`。
+- 用户描述较复杂的事实情形，难以提炼精确关键词时，使用 `yuandian_semantic_search_cases`。
 
 ## 第二步：分层检索
 
@@ -67,36 +67,36 @@ https://open.chineselaw.com/，支持邮箱 yuandianzonghe@thunisoft.com）。
 
 | 场景 | 首选 MCP 工具 | 补充工具 |
 |------|--------------|----------|
-| 已知案号，需全文 | `yuandian_rh_case_details`（type=ptal） | `yuandian_rh_case_details`（type=qwal） |
-| 权威案例（指导性 / 典型） | `yuandian_rh_qwal_search` | `yuandian_case_vector_search`（dianxing=true） |
-| 主题关键词检索（无权威要求） | `yuandian_rh_qwal_search`（先）→ `yuandian_rh_ptal_search`（扩展） | `yuandian_case_vector_search` |
-| 关键词检索结果 < 3 条相关案例 | `yuandian_case_vector_search` | — |
-| 事实相似判例 | `yuandian_case_vector_search` | `yuandian_rh_ptal_search` |
-| 按援引法条查案例 | `yuandian_rh_ptal_search`（yyft=["法条全称"]） | `yuandian_rh_qwal_search` |
+| 已知案号，需全文 | `yuandian_get_case_detail`（type=ptal） | `yuandian_get_case_detail`（type=qwal） |
+| 权威案例（指导性 / 典型） | `yuandian_search_authoritative_cases` | `yuandian_semantic_search_cases`（dianxing=true） |
+| 主题关键词检索（无权威要求） | `yuandian_search_authoritative_cases`（先）→ `yuandian_search_judicial_cases`（扩展） | `yuandian_semantic_search_cases` |
+| 关键词检索结果 < 3 条相关案例 | `yuandian_semantic_search_cases` | — |
+| 事实相似判例 | `yuandian_semantic_search_cases` | `yuandian_search_judicial_cases` |
+| 按援引法条查案例 | `yuandian_search_judicial_cases`（yyft=["法条全称"]） | `yuandian_search_authoritative_cases` |
 
 ### 检索顺序（硬性）
 
-1. **权威案例优先**：先调用 `yuandian_rh_qwal_search` 获取指导性 / 典型案例。
-2. **普通案例扩展**：调用 `yuandian_rh_ptal_search` 扩大样本量。
-3. **语义补充**：若以上两步相关结果 < 3 条，调用 `yuandian_case_vector_search` 补充。
+1. **权威案例优先**：先调用 `yuandian_search_authoritative_cases` 获取指导性 / 典型案例。
+2. **普通案例扩展**：调用 `yuandian_search_judicial_cases` 扩大样本量。
+3. **语义补充**：若以上两步相关结果 < 3 条，调用 `yuandian_semantic_search_cases` 补充。
 
 不允许跳过权威案例直接走普通案例 / 语义检索——除非用户明确不需要权威案例。
 
 ### MCP 工具说明
 
-**`yuandian_rh_qwal_search`** — 权威案例关键词检索（指导性 / 典型案例）
+**`yuandian_search_authoritative_cases`** — 权威案例关键词检索（指导性 / 典型案例）
 - 参数：`qw`（全文关键词）、`ay`（案由）、`ajlb`（案件类别）、`ja_start` / `ja_end`（日期范围）、`top_k`。
 - 返回：`{"total": int, "lst": [...]}`，取 `lst` 前先检查 `total > 0`。
 
-**`yuandian_rh_ptal_search`** — 普通案例关键词检索
+**`yuandian_search_judicial_cases`** — 普通案例关键词检索
 - 参数：`qw`、`fxgc`（分析过程关键词）、`ajlb`、`wszl`、`xzqh_p`、`yyft`（援引法条列表）、`top_k`。
 - 返回：`{"total": int, "lst": [...]}`。
 
-**`yuandian_rh_case_details`** — 案例详情全文
+**`yuandian_get_case_detail`** — 案例详情全文
 - 参数：`type`（"ptal" 或 "qwal"，必填）、`ah`（案号）或 `id`。
 - 返回：案例全文，含 `content` / `dsr` / `fxgc` / `pjjg` 等字段。
 
-**`yuandian_case_vector_search`** — 案例语义检索
+**`yuandian_semantic_search_cases`** — 案例语义检索
 - 参数：`query`（自然语言）、`wenshu_type`（案件类别）、`dianxing`（true = 仅权威案例）、`cj`（法院层级）、`return_num`。
 - 返回：按相似度排序的案例列表，每条含 `score`。
 

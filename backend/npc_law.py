@@ -43,13 +43,22 @@ _cache_lock = threading.Lock()
 
 
 def _throttle() -> None:
-    """串行化请求并保持 ≥0.5s 间隔（官方限流对策）。"""
+    """串行化请求并保持 ≥0.5s 间隔（官方限流对策）。
+
+    等待必须在锁外 sleep：持锁 sleep 会把并发调用方全部挂起在锁上，
+    最坏情形把默认 executor 的工作线程整个占死（doc_review 串行查证 8 部法律时尤甚）。
+    """
     global _last_request_ts
+    wait = 0.0
     with _rate_lock:
         wait = _REQUEST_INTERVAL - (time.time() - _last_request_ts)
+        # 立即抢占下一个时间槽：并发者各自拿到错开的槽位，不会挤进同一窗口
         if wait > 0:
-            time.sleep(wait)
-        _last_request_ts = time.time()
+            _last_request_ts = _last_request_ts + _REQUEST_INTERVAL
+        else:
+            _last_request_ts = time.time()
+            return
+    time.sleep(wait)
 
 
 def _strip_highlight(title: str) -> str:

@@ -10,6 +10,8 @@ import type { ManagedFile } from '../types/legal'
 import { dataUrlToText, textToDataUrl } from '../lib/encoding'
 
 export interface EditableFile {
+  /** 对应 IndexedDB 记录 id（按 id 定位可避免同内容文件错改） */
+  id?: string
   name: string
   data: string
   size: number
@@ -42,20 +44,22 @@ export function useFileEditor(
   }
 
   async function saveEdits(file: Ref<EditableFile | null>) {
-    if (!file.value || !editText.value) return
+    if (!file.value) return
     saving.value = true
     try {
-      // UTF-8 安全编码（btoa 直编码中文会抛异常/写坏数据）
+      // UTF-8 安全编码（btoa 直编码中文会抛异常/写坏数据）；允许保存空内容
       const dataUrl = textToDataUrl(editText.value, 'text/markdown')
-      const fileRecord = fileStore.files.find((f: ManagedFile) => f.data === file.value!.data)
+      // 优先按 id 定位记录（旧版按 base64 data 全等定位：两个内容相同的文件会错改到
+      // 另一条记录）；再经 updateFile 原地写回——旧版「先删后写」在 add 失败时
+      // 旧记录已被删，文件数据永久丢失
+      const fileRecord = fileStore.files.find((f: ManagedFile) =>
+        file.value!.id ? f.id === file.value!.id : f.data === file.value!.data,
+      )
       if (fileRecord) {
         fileRecord.data = dataUrl
         fileRecord.size = dataUrl.length
-        // Persist to IndexedDB: delete old record first, then add the updated one.
-        // Delete-first prevents data duplication if the add succeeds but delete fails.
         const mod = await import('../lib/db')
-        await mod.deleteFile(fileRecord.id)
-        await mod.addFile({ ...fileRecord, createdAt: fileRecord.createdAt.toISOString() })
+        await mod.updateFile(fileRecord.id, { data: dataUrl, size: dataUrl.length })
       }
       file.value.data = dataUrl
       file.value.size = dataUrl.length

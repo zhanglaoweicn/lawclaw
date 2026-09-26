@@ -201,7 +201,7 @@ import { useCaseViewStore } from '../../stores/caseView'
 import type { MatterFormData, ProcedureStage, ClientRole, RiskLevel, FeeType } from '../../types/legal'
 import {
   ALL_STAGES, PROCEDURE_STAGES, CLIENT_ROLES, RISK_LEVELS, FEE_TYPES,
-  COMMON_CASE_CAUSES, PRACTICE_AREA_TO_CASE_TYPE, formatCurrency, suggestRiskLevel,
+  COMMON_CASE_CAUSES, PRACTICE_AREA_TO_CASE_TYPE, formatCurrency,
   CONFLICT_LEVEL_META, type ConflictMatch, type ConflictLevel,
 } from '../../lib/caseConstants'
 
@@ -270,11 +270,6 @@ function onPracticeAreaChange() {
   if (form.clientRole && !availableClientRoles.value.find(r => r.value === form.clientRole)) {
     form.clientRole = availableClientRoles.value[0]?.value as ClientRole
   }
-}
-
-/** 标的额变化时自动建议风险等级（仅当用户未手动选择时） */
-function autoSuggestRisk() {
-  form.riskLevel = suggestRiskLevel(form.claimAmount, form.caseType)
 }
 
 // ── 利益冲突实时检查 ──

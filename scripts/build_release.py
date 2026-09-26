@@ -640,9 +640,9 @@ def audit_payload():
         if (PAYLOAD / extra).exists():
             leaks.append(f"顶层多余项 {extra}")
     if leaks:
-        print("    ⚠ 发现可疑项，请人工确认：" + "；".join(leaks))
-    else:
-        print("    ✓ 未携带运行时数据、未携带密钥")
+        # 硬失败：携带密钥/运行时数据的发行物绝不能出厂（旧版仅打印警告，是"软门"）
+        raise SystemExit("    ✗ 发布物自检失败，拒绝出厂：" + "；".join(leaks))
+    print("    ✓ 未携带运行时数据、未携带密钥")
     # 技能是否齐备
     skills = be / ".hermes" / "skills"
     n = len([d for d in skills.iterdir() if d.is_dir()]) if skills.exists() else 0

@@ -10,11 +10,22 @@ export function useSettingsForm() {
   const activeTab = ref('model')
 
   const form = reactive({
-    baseUrl: '', model: '', apiKey: '',
-    name: '', firm: '', title: '', years: 0,
-    practiceAreas: [] as string[], teamSize: 'solo' as string,
-    feishuEnabled: false, feishuAppId: '', feishuAppSecret: '',
-    wecomEnabled: false, wecomCorpId: '', wecomBotId: '', wecomSecret: '',
+    baseUrl: '',
+    model: '',
+    apiKey: '',
+    name: '',
+    firm: '',
+    title: '',
+    years: 0,
+    practiceAreas: [] as string[],
+    teamSize: 'solo' as string,
+    feishuEnabled: false,
+    feishuAppId: '',
+    feishuAppSecret: '',
+    wecomEnabled: false,
+    wecomCorpId: '',
+    wecomBotId: '',
+    wecomSecret: '',
   })
 
   function loadFromStore() {
@@ -37,33 +48,41 @@ export function useSettingsForm() {
   }
 
   async function save() {
-    const feishuSecret = form.feishuAppSecret === SECRET_PLACEHOLDER
-      ? (setupStore.feishuConfig?.appSecret || '')
-      : form.feishuAppSecret
-    const wecomSecret = form.wecomSecret === SECRET_PLACEHOLDER
-      ? (setupStore.wecomConfig?.secret || '')
-      : form.wecomSecret
+    const feishuSecret =
+      form.feishuAppSecret === SECRET_PLACEHOLDER ? setupStore.feishuConfig?.appSecret || '' : form.feishuAppSecret
+    const wecomSecret =
+      form.wecomSecret === SECRET_PLACEHOLDER ? setupStore.wecomConfig?.secret || '' : form.wecomSecret
 
     setupStore.setApiKey(form.apiKey, form.baseUrl, form.model)
     setupStore.setProfile({
-      name: form.name, firm: form.firm, title: form.title,
-      yearsOfPractice: form.years, practiceAreas: form.practiceAreas,
-      teamSize: form.teamSize as any, jurisdiction: ['中国'],
+      name: form.name,
+      firm: form.firm,
+      title: form.title,
+      yearsOfPractice: form.years,
+      practiceAreas: form.practiceAreas,
+      teamSize: form.teamSize as any,
+      jurisdiction: ['中国'],
       feishu: { enabled: form.feishuEnabled, appId: form.feishuAppId, appSecret: feishuSecret },
       wecom: { enabled: form.wecomEnabled, corpId: form.wecomCorpId, botId: form.wecomBotId, secret: wecomSecret },
     })
     try {
       await backend.call('setup_save', {
-        api_key: form.apiKey, base_url: form.baseUrl, model: form.model,
-        feishu_app_id: form.feishuAppId, feishu_app_secret: feishuSecret,
-        wecom_corp_id: form.wecomCorpId, wecom_bot_id: form.wecomBotId, wecom_secret: wecomSecret,
+        api_key: form.apiKey,
+        base_url: form.baseUrl,
+        model: form.model,
+        feishu_app_id: form.feishuAppId,
+        feishu_app_secret: feishuSecret,
+        wecom_corp_id: form.wecomCorpId,
+        wecom_bot_id: form.wecomBotId,
+        wecom_secret: wecomSecret,
       })
     } catch (e) {
       console.warn('后端保存失败，仅保存到本地:', e)
       ElMessage.warning('后端保存失败，配置仅保存到本地')
-      return // Don't show success if backend failed
+      return false // Don't show success if backend failed
     }
     // 成功提示由调用方（SettingsPanelFull.handleSave）统一发出，含后端连通状态，此处不重复 toast
+    return true
   }
 
   /** validate baseUrl format */
@@ -114,13 +133,17 @@ export function useSettingsForm() {
     { label: 'DeepSeek（默认）', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-flash' },
     { label: 'OpenAI', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o' },
     { label: '智谱 GLM', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-plus' },
-    { label: '百度千帆', baseUrl: 'https://aip.baidubce.com/rpc/2.0/ai/custom/v1/wenxinworkshop/chat', model: 'ernie-4.0' },
+    {
+      label: '百度千帆',
+      baseUrl: 'https://aip.baidubce.com/rpc/2.0/ai/custom/v1/wenxinworkshop/chat',
+      model: 'ernie-4.0',
+    },
     { label: '阿里百炼', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus' },
     { label: '本地 Ollama', baseUrl: 'http://localhost:11434/v1', model: 'llama3.1' },
     { label: 'Agnes AI', baseUrl: 'https://apihub.agnes-ai.com/v1', model: 'agnes-2.0-flash' },
   ]
 
-  function applyPreset(preset: typeof PROVIDER_PRESETS[0]) {
+  function applyPreset(preset: (typeof PROVIDER_PRESETS)[0]) {
     form.baseUrl = preset.baseUrl
     form.model = preset.model
   }
@@ -145,8 +168,19 @@ export function useSettingsForm() {
   }
 
   return {
-    activeTab, form, mcpServers, mcpLoading, mcpError, testingConnection,
-    loadFromStore, save, testConnection, loadMcpServers,
-    validateBaseUrl, PROVIDER_PRESETS, applyPreset, SECRET_PLACEHOLDER,
+    activeTab,
+    form,
+    mcpServers,
+    mcpLoading,
+    mcpError,
+    testingConnection,
+    loadFromStore,
+    save,
+    testConnection,
+    loadMcpServers,
+    validateBaseUrl,
+    PROVIDER_PRESETS,
+    applyPreset,
+    SECRET_PLACEHOLDER,
   }
 }

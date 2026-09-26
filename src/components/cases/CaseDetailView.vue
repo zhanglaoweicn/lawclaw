@@ -603,7 +603,7 @@ const timelineStore = useTimelineStore()
 const scheduleStore = useScheduleStore()
 
 const showTimeline = ref(true)
-const previewFile = ref<{ name: string; data: string; size: number; type: string } | null>(null)
+const previewFile = ref<{ id?: string; name: string; data: string; size: number; type: string } | null>(null)
 const showEditDialog = ref(false)
 
 // ── 阶段推荐技能 ──
@@ -1012,7 +1012,7 @@ function formatDate(d: string | Date) {
 }
 
 // ── File preview ──
-function openPreview(f: { name: string; data: string; size: number; type: string }) {
+function openPreview(f: { id?: string; name: string; data: string; size: number; type: string }) {
   previewFile.value = f
   editor.editing.value = false
 }

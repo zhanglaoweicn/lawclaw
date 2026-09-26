@@ -100,9 +100,23 @@ async function verifyCitation() {
   }
 }
 
+/** 仅放行 http(s) 链接：引用卡 URL 来自外部数据源，拦截 javascript: 等危险协议 */
+function safeExternalUrl(raw: string | undefined | null): string | null {
+  if (!raw) return null
+  try {
+    const u = new URL(raw)
+    return (u.protocol === 'http:' || u.protocol === 'https:') ? u.toString() : null
+  } catch {
+    return null
+  }
+}
+
 function openUrl() {
-  if (props.citation.url) {
-    window.open(props.citation.url, '_blank')
+  const url = safeExternalUrl(props.citation.url)
+  if (url) {
+    window.open(url, '_blank')
+  } else if (props.citation.url) {
+    ElMessage.warning('链接协议不受支持，已拦截打开')
   }
 }
 
@@ -111,7 +125,8 @@ async function openOfficialDoc() {
   if (!npcBbbs.value) return
   try {
     const { url } = await backend.npcDocxUrl(npcBbbs.value)
-    if (url) window.open(url, '_blank')
+    const safe = safeExternalUrl(url)
+    if (safe) window.open(safe, '_blank')
     else ElMessage.warning('未获取到官方原文链接')
   } catch (e: unknown) {
     ElMessage.warning((e as Error)?.message?.slice(0, 60) || '获取官方原文失败')

@@ -16,7 +16,7 @@ argument-hint: "[粘贴AI供应商合同条款]"
 4. 输出：风险总结 + 红线标记 + 谈判立场（经核准/附条件/阻止）。
 
 ```
-/ai-governance-legal:vendor-ai-review
+「供应商AI方案审查」技能卡
 [paste the vendor AI terms]
 ```
 

@@ -31,13 +31,13 @@ argument-hint: "[调查事项名称] [受众：hr / 管理层 / 外部律师]"
 ## 示例
 
 ```
-/employment-legal:investigation-summary [调查事项名称] hr
+「调查摘要报告」技能卡 [调查事项名称] hr
 ```
 
 ```
-/employment-legal:investigation-summary [调查事项名称] 管理层
+「调查摘要报告」技能卡 [调查事项名称] 管理层
 ```
 
 ```
-/employment-legal:investigation-summary [调查事项名称] 外部律师
+「调查摘要报告」技能卡 [调查事项名称] 外部律师
 ```

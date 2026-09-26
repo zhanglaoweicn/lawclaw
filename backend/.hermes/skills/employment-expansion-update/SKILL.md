@@ -15,7 +15,7 @@ argument-hint: "[省/直辖市/地域名称]"
 
 1. 加载 `$LEGAL_AGENT_PROFILE_HOME/employment-legal/profile.md`。
 
-2. 识别追踪文件：`./expansion-[slug].yaml`。如不存在，响应："未找到[地域]的扩张追踪文件。运行 `/employment-legal:expansion-kickoff [地域]` 来启动一个。"
+2. 识别追踪文件：`./expansion-[slug].yaml`。如不存在，响应："未找到[地域]的扩张追踪文件。运行 `「用工扩展合规启动」技能卡 [地域]` 来启动一个。"
 
 3. 读取追踪文件。显示当前状态：
 
@@ -51,10 +51,10 @@ argument-hint: "[省/直辖市/地域名称]"
 ## 示例
 
 ```
-/employment-legal:expansion-update 成都
+「用工扩展合规进展」技能卡 成都
 ```
 
 ```
-/employment-legal:expansion-update
+「用工扩展合规进展」技能卡
 （如存在多个追踪文件，将询问哪个地域）
 ```

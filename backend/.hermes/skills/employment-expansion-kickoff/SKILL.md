@@ -21,7 +21,7 @@ argument-hint: "[省/直辖市/地域名称]"
    - 起草跨职能问题清单（HR、财务、行政等）
    - 浮现该地域特定标记
    - 创建追踪文件
-3. 如果该地域已有追踪文件（`./expansion-[slug].yaml`），标记："[地域]的扩张追踪文件已存在。使用 `/employment-legal:expansion-update [地域]` 更新它，或确认要重新开始。"
+3. 如果该地域已有追踪文件（`./expansion-[slug].yaml`），标记："[地域]的扩张追踪文件已存在。使用 `「用工扩展合规进展」技能卡 [地域]` 更新它，或确认要重新开始。"
 4. 完成后创建 `./expansion-[slug].yaml`。
 
 ## 用工结构选择框架
@@ -47,10 +47,10 @@ argument-hint: "[省/直辖市/地域名称]"
 ## 示例
 
 ```
-/employment-legal:expansion-kickoff 成都
+「用工扩展合规启动」技能卡 成都
 ```
 
 ```
-/employment-legal:expansion-kickoff
+「用工扩展合规启动」技能卡
 （技能将询问哪个地域）
 ```

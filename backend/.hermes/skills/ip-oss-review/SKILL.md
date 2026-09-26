@@ -34,10 +34,10 @@ argument-hint: "[清单/SBOM的文件路径 | 包名 | 仓库路径 | 粘贴文�
 ## 示例
 
 ```
-/ip-legal:oss-review ~/code/my-project/package.json
-/ip-legal:oss-review ~/code/my-project/requirements.txt
-/ip-legal:oss-review redis
-/ip-legal:oss-review ~/code/my-project  # 仓库根目录 — 扫描所有清单
+「开源合规审查」技能卡 <项目目录>
+「开源合规审查」技能卡 <项目目录>
+「开源合规审查」技能卡 redis
+「开源合规审查」技能卡 <项目目录>  # 仓库根目录 — 扫描所有清单
 ```
 
 ---
@@ -51,7 +51,7 @@ Jira、Linear 或 Asana 后，本技能可以：监控进入的开源请求、�
 
 ## 事项上下文
 
-**事项上下文。** 检查实务级 CLAUDE.md 中的 `## 事项工作区`。如 `Enabled` 为 `✗`（法务用户的默认状态），跳过本段其余内容——各技能使用实务级上下文，事项机制不可见。如已启用且无活跃事项，询问："此事项属于哪个案件？运行 `/ip-legal:matter-workspace switch <slug>` 或回复 `实务级`。"加载活跃事项的 `matter.md` 获取事项特定上下文和覆盖设置。将输出写入事项文件夹 `./matters/<事项slug>/`。除非 `跨事项上下文` 开启，否则绝不读取其他事项的文件。
+**事项上下文。** 检查实务级 CLAUDE.md 中的 `## 事项工作区`。如 `Enabled` 为 `✗`（法务用户的默认状态），跳过本段其余内容——各技能使用实务级上下文，事项机制不可见。如已启用且无活跃事项，询问："此事项属于哪个案件？运行 `技能页中的相关技能卡 switch <slug>` 或回复 `实务级`。"加载活跃事项的 `matter.md` 获取事项特定上下文和覆盖设置。将输出写入事项文件夹 `./matters/<事项slug>/`。除非 `跨事项上下文` 开启，否则绝不读取其他事项的文件。
 
 ---
 

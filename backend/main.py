@@ -1828,6 +1828,12 @@ def _parse_skill_md(path: Path) -> dict | None:
         "privacy": "数据隐私",
         "regulatory": "监管合规",
         "product": "产品合规",
+        # 高频案由（2026-09-27 立项开发）
+        "private": "民事诉讼",
+        "traffic": "民事诉讼",
+        "housing": "民事诉讼",
+        "work-injury": "劳动人事",
+        "criminal": "刑事辩护",
     }
     for prefix, label in GROUP_MAP.items():
         if name.startswith(prefix) or group.startswith(prefix):
@@ -1878,6 +1884,14 @@ SKILL_DISPLAY_NAMES = {
     "litigation-matter-update": "案件进展更新",
     "litigation-matter-close": "结案报告",
     "litigation-cn-evidence-review": "证据审查分析",
+    # 高频案由（2026-09-27 立项开发补全）
+    "divorce-agreement-draft": "离婚协议起草",
+    "private-lending-dispute": "民间借贷纠纷",
+    "traffic-accident-claim": "交通事故赔偿",
+    "housing-sale-dispute": "房屋买卖纠纷",
+    "housing-lease-dispute": "房屋租赁纠纷",
+    "work-injury-claim": "工伤认定与赔偿",
+    "criminal-detention-meeting": "刑事会见与取保",
     "litigation-demand-intake": "律师函接案登记",
     "litigation-demand-draft": "律师函起草",
     "litigation-demand-received": "律师函应对分析",

@@ -61,10 +61,10 @@ argument-hint: "[调查事项名称]"
 ## 示例
 
 ```
-/employment-legal:investigation-memo [调查事项名称]
+「调查备忘录起草」技能卡 [调查事项名称]
 ```
 
 ```
-/employment-legal:investigation-memo [调查事项名称]
+「调查备忘录起草」技能卡 [调查事项名称]
 （如已有草案则更新）
 ```

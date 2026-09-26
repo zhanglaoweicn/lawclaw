@@ -42,11 +42,11 @@ argument-hint: "[调查事项名称，然后粘贴或附上数据]"
 ## 示例
 
 ```
-/employment-legal:investigation-add [调查事项名称]
+「调查记录追加」技能卡 [调查事项名称]
 [粘贴访谈记录]
 ```
 
 ```
-/employment-legal:investigation-add [调查事项名称]
+「调查记录追加」技能卡 [调查事项名称]
 [附上邮件导出文件]
 ```

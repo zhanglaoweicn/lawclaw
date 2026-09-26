@@ -19,7 +19,7 @@ user-invocable: false
 
 ## Matter context
 
-**Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip the rest of this paragraph — skills use practice-level context and the matter machinery is invisible. If enabled and there is no active matter, ask: "Which matter is this for? Run `/employment-legal:matter-workspace switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific context and overrides. Write outputs to the matter folder at `./matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
+**Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip the rest of this paragraph — skills use practice-level context and the matter machinery is invisible. If enabled and there is no active matter, ask: "Which matter is this for? Run `技能页中的相关技能卡 switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific context and overrides. Write outputs to the matter folder at `./matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
 
 ---
 
@@ -72,7 +72,7 @@ Read `$LEGAL_AGENT_PROFILE_HOME/employment-legal/profile.md` → escalation tabl
 
 ## Mode 1: Open a new matter
 
-Triggered by `/employment-legal:investigation-open` or "open an investigation"
+Triggered by `「调查案件开启」技能卡` or "open an investigation"
 or "start an investigation into".
 
 ### Step 1 — Intake
@@ -374,7 +374,7 @@ After presenting the checklist, write it to
 
 ## Mode 2: Add data
 
-Triggered by `/employment-legal:investigation-add` or "add to the [matter]
+Triggered by `「调查记录追加」技能卡` or "add to the [matter]
 investigation" or when the attorney pastes documents or interview notes.
 
 ### Step 1 — Identify the matter
@@ -483,7 +483,7 @@ the attorney decides when a source is adequately covered.
 
 ## Mode 3: Query the log
 
-Triggered by `/employment-legal:investigation-query` or any question
+Triggered by `「调查记录检索」技能卡` or any question
 phrased against the investigation (e.g., "what did [witness] say about",
 "what documents corroborate", "what do we still need", "what's the
 strongest evidence on each side").
@@ -520,7 +520,7 @@ Flag if not yet completed.
 
 ## Mode 4: Draft or update the memo
 
-Triggered by `/employment-legal:investigation-memo` or "draft the memo"
+Triggered by `「调查备忘录起草」技能卡` or "draft the memo"
 or "update the memo".
 
 ### If no memo exists — first draft
@@ -701,7 +701,7 @@ Apply updates. Preserve prior drafting. Mark changed sections with
 
 ## Mode 5: Draft audience summary
 
-Triggered by `/employment-legal:investigation-summary` or "draft a
+Triggered by `「调查摘要报告」技能卡` or "draft a
 summary for [audience]".
 
 Ask: who is the audience and what decision or action does this summary

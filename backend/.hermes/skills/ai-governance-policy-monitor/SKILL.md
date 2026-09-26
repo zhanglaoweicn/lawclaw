@@ -25,8 +25,8 @@ argument-hint: "[描述提议的新AI实践 — 或省略/使用 --sweep 进入�
 3. 输出：已覆盖 / 缺失 / 冲突 + 每个差距的建议语言 + 时机建议。
 
 ```
-/ai-governance-legal:policy-monitor
-/ai-governance-legal:policy-monitor "我们想在内部使用AI生成客户邮件的草稿"
+「AI政策动态监控」技能卡
+「AI政策动态监控」技能卡 "我们想在内部使用AI生成客户邮件的草稿"
 ```
 
 ---

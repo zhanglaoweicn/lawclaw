@@ -18,7 +18,7 @@ argument-hint: "[制度主题——如'远程办公'、'考勤管理'、'绩效�
 
 ## 案件上下文
 
-**案件上下文。** 检查实务级 CLAUDE.md 中的 `## Matter workspaces`。如果 `Enabled` 为 `✗`（法务用户默认值），跳过本段——技能使用实务级上下文，案件机制不可见。如果已启用且无活跃案件，询问："这是哪个案件的？运行 `/employment-legal:matter-workspace switch <slug>` 或说 `practice-level`。" 加载活跃案件的 `matter.md` 获取案件特定上下文和覆盖项。将输出写入案件文件夹。除非 `Cross-matter context` 为 `on`，否则不得读取其他案件的文件。
+**案件上下文。** 检查实务级 CLAUDE.md 中的 `## Matter workspaces`。如果 `Enabled` 为 `✗`（法务用户默认值），跳过本段——技能使用实务级上下文，案件机制不可见。如果已启用且无活跃案件，询问："这是哪个案件的？运行 `技能页中的相关技能卡 switch <slug>` 或说 `practice-level`。" 加载活跃案件的 `matter.md` 获取案件特定上下文和覆盖项。将输出写入案件文件夹。除非 `Cross-matter context` 为 `on`，否则不得读取其他案件的文件。
 
 ---
 

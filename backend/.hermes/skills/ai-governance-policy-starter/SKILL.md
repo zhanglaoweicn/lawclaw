@@ -15,9 +15,9 @@ argument-hint: "[面向的受众 — 内部员工 / 外部客户 / 两者皆需]
 4. 附一份"仍需决定"清单——政策初稿解决不了的问题，需要由人来拍板。
 
 ```
-/ai-governance-legal:policy-starter "内部员工AI使用政策"
-/ai-governance-legal:policy-starter "面向用户"
-/ai-governance-legal:policy-starter
+「AI治理政策起草」技能卡 "内部员工AI使用政策"
+「AI治理政策起草」技能卡 "面向用户"
+「AI治理政策起草」技能卡
 [省略参数以获取受众选择提示]
 ```
 

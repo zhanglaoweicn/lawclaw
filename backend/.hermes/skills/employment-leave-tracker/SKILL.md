@@ -32,7 +32,7 @@ argument-hint: "[无需参数——从假期登记册 leave-register.yaml 读取
 ## 示例
 
 ```
-/employment-legal:leave-tracker
+「假期追踪（三期/医疗期）」技能卡
 ```
 
-建议每周运行——设置周一上午提醒调用 `/employment-legal:leave-tracker`。自动排期需要单独的集成（日历提醒、定时任务等）；LawClaw 不自行排期。
+建议每周运行——设置周一上午提醒调用 `「假期追踪（三期/医疗期）」技能卡`。自动排期需要单独的集成（日历提醒、定时任务等）；LawClaw 不自行排期。

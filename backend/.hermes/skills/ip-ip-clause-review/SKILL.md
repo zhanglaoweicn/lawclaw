@@ -33,16 +33,16 @@ argument-hint: "[文件路径 | 网盘链接 | 粘贴文本]"
 ## 示例
 
 ```
-/ip-legal:ip-clause-review ~/Documents/供应商-SOW.pdf
-/ip-legal:ip-clause-review https://docs.google.com/document/d/...
-/ip-legal:ip-clause-review
+「知识产权条款审查」技能卡 <本地路径>/供应商-SOW.pdf
+「知识产权条款审查」技能卡 https://docs.google.com/document/d/...
+「知识产权条款审查」技能卡
 ```
 
 ---
 
 ## 事项上下文
 
-**事项上下文。** 检查实务级 CLAUDE.md 中的 `## 事项工作区`。如 `Enabled` 为 `✗`（法务用户的默认状态），跳过本段其余内容——各技能使用实务级上下文，事项机制不可见。如已启用且无活跃事项，询问："此事项属于哪个案件？运行 `/ip-legal:matter-workspace switch <slug>` 或回复 `实务级`。"加载活跃事项的 `matter.md` 获取事项特定上下文和覆盖设置。将输出写入事项文件夹 `./matters/<事项slug>/`。除非 `跨事项上下文` 开启，否则绝不读取其他事项的文件。
+**事项上下文。** 检查实务级 CLAUDE.md 中的 `## 事项工作区`。如 `Enabled` 为 `✗`（法务用户的默认状态），跳过本段其余内容——各技能使用实务级上下文，事项机制不可见。如已启用且无活跃事项，询问："此事项属于哪个案件？运行 `技能页中的相关技能卡 switch <slug>` 或回复 `实务级`。"加载活跃事项的 `matter.md` 获取事项特定上下文和覆盖设置。将输出写入事项文件夹 `./matters/<事项slug>/`。除非 `跨事项上下文` 开启，否则绝不读取其他事项的文件。
 
 ---
 

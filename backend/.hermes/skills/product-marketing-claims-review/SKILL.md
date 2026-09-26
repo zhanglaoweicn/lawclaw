@@ -16,7 +16,7 @@ argument-hint: "[粘贴文案，或文件路径]"
 5. 输出：逐条分析附判断，如果足够短附建议修改文本。
 
 ```
-/product-legal:marketing-claims-review
+「宣传用语合规审查」技能卡
 [粘贴落地页文案]
 ```
 

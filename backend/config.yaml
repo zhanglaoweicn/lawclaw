@@ -113,6 +113,15 @@ skills:
     - civil-cargo-damage-claim
     - legal/legal-deadline-briefing
     - legal/legal-profile-interview-ops
+
+    # 高频案由补全（2026-09-27 立项开发：民间借贷/交通事故/房屋买卖租赁/工伤/刑事会见）
+    - divorce-agreement-draft
+    - private-lending-dispute
+    - traffic-accident-claim
+    - housing-sale-dispute
+    - housing-lease-dispute
+    - work-injury-claim
+    - criminal-detention-meeting
 memory:
   provider: ""
   memory_enabled: true

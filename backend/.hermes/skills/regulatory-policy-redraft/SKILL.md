@@ -1,6 +1,6 @@
 ---
 name: regulatory-policy-redraft
-description: 产出关闭一个差距的政策修订建议稿（带标记版）。由 /regulatory-legal:gaps 或 /regulatory-legal:policy-diff 找到的差距触发。供内部审阅的初稿——不直接应用到已批准的政策文件中。适用于用户说"重写政策"、"起草政策修复"、"标记政策"或 gap-surfacer 传递差距供起草时。
+description: 产出关闭一个差距的政策修订建议稿（带标记版）。由 「合规缺口梳理」技能卡 或 「政策文件差异对比」技能卡 找到的差距触发。供内部审阅的初稿——不直接应用到已批准的政策文件中。适用于用户说"重写政策"、"起草政策修复"、"标记政策"或 gap-surfacer 传递差距供起草时。
 argument-hint: "[GAP-ID 或差距描述]"
 ---
 
@@ -8,7 +8,7 @@ argument-hint: "[GAP-ID 或差距描述]"
 
 1. 读取 `$LEGAL_AGENT_PROFILE_HOME/regulatory-legal/profile.md` → 政策库索引 + 实践配置。
 2. 使用以下工作流。
-3. 收集输入：差距（来自 `/regulatory-legal:gaps` 输出或直接描述）、当前已批准的政策文本、法规文本。
+3. 收集输入：差距（来自 `「合规缺口梳理」技能卡` 输出或直接描述）、当前已批准的政策文本、法规文本。
 4. 验证法规是有效的（按照政策差异分析的法规状态检查）。
 5. 产出受影响政策章节的带标记修订稿——最小化编辑，`[需核实]` 标签贯穿全文，内联注释解释每次变更的原因。
 6. 输出一份政策修订备忘录。写入新文件 `[政策名称]-proposed-redraft-[YYYY-MM-DD].md`——绝不写入源政策文件。
@@ -35,7 +35,7 @@ argument-hint: "[GAP-ID 或差距描述]"
 
 - 一个来自差距跟踪器的 `GAP-ID`
 - 用户在消息中描述的差距
-- 从 `/regulatory-legal:policy-diff` 粘贴的差异分析摘要
+- 从 `「政策文件差异对比」技能卡` 粘贴的差异分析摘要
 
 ### 1b. 当前政策文本
 

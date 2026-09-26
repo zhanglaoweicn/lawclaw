@@ -442,11 +442,11 @@ D. 不确定
 >
 > **下一步建议：**
 > 1. 运行 `「AI使用清单盘点」 --full` 建立完整的AI系统清单
-> 2. 对每个已部署系统运行 `/ai-governance-legal:aia-generation` 进行评估
-> 3. 运行 `/ai-governance-legal:reg-gap-analysis` 检查法规合规差距
-> 4. 如果还没有AI使用政策，运行 `/ai-governance-legal:policy-starter` 起草
+> 2. 对每个已部署系统运行 `「算法影响评估生成」技能卡` 进行评估
+> 3. 运行 `「AI监管缺口分析」技能卡` 检查法规合规差距
+> 4. 如果还没有AI使用政策，运行 `「AI治理政策起草」技能卡` 起草
 >
-> 随时用 `/ai-governance-legal:customize` 调整配置。用 `「AI治理插件初始化访谈」 --redo` 从头重新运行。"
+> 随时用 `技能页中的相关技能卡` 调整配置。用 `「AI治理插件初始化访谈」 --redo` 从头重新运行。"
 
 ---
 

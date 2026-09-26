@@ -11,8 +11,8 @@ argument-hint: "<--send | --receive> [上下文、对方当事人或收函路径
 
 两种模式。选一：
 
-- `/ip-legal:cease-desist --send` — 起草警告函，校准至你的执法姿态。发送前运行响亮的关口。
-- `/ip-legal:cease-desist --receive` — 对收到的警告函做分诊。产出选项备忘录附建议。
+- `「侵权警告函起草」技能卡 --send` — 起草警告函，校准至你的执法姿态。发送前运行响亮的关口。
+- `「侵权警告函起草」技能卡 --receive` — 对收到的警告函做分诊。产出选项备忘录附建议。
 
 ## 指令
 
@@ -26,9 +26,9 @@ argument-hint: "<--send | --receive> [上下文、对方当事人或收函路径
 ## 示例
 
 ```
-/ip-legal:cease-desist --send
-/ip-legal:cease-desist --receive ~/Downloads/收函-acme.pdf
-/ip-legal:cease-desist
+「侵权警告函起草」技能卡 --send
+「侵权警告函起草」技能卡 --receive <本地路径>/收函-acme.pdf
+「侵权警告函起草」技能卡
 ```
 
 ---

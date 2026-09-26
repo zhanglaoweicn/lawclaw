@@ -34,16 +34,16 @@ argument-hint: "[调查事项名称] [问题]"
 ## 示例
 
 ```
-/employment-legal:investigation-query [调查事项名称]
+「调查记录检索」技能卡 [调查事项名称]
 被投诉人关于12月部门聚餐说了什么？
 ```
 
 ```
-/employment-legal:investigation-query [调查事项名称]
+「调查记录检索」技能卡 [调查事项名称]
 投诉人和被投诉人的陈述在哪些地方互相矛盾？
 ```
 
 ```
-/employment-legal:investigation-query [调查事项名称]
+「调查记录检索」技能卡 [调查事项名称]
 我们还缺什么？
 ```

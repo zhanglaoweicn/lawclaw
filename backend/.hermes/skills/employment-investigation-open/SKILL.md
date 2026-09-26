@@ -42,12 +42,12 @@ argument-hint: "[指控的简要描述]"
 ## 示例
 
 ```
-/employment-legal:investigation-open
+「调查案件开启」技能卡
 收到对北京办公室某部门负责人的性骚扰投诉。
 ```
 
 ```
-/employment-legal:investigation-open
+「调查案件开启」技能卡
 （技能将询问详情）
 ```
 

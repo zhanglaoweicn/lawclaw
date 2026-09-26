@@ -3486,9 +3486,10 @@ Write only the summary body. Do not include any preamble or prefix."""
             )
             return None
         kind = _classify_summary_failure(e)
+        access_error = _is_summary_access_or_quota_error(e)
         # Auth/permission/quota failures are not retryable: flag so compress() preserves the
         # session. A distinct summary_model still gets the one-shot main-model fallback.
-        if _is_summary_access_or_quota_error(e):
+        if access_error:
             # Field name kept for caller compatibility; now covers the whole access/quota class.
             self._last_summary_auth_failure = True
         if kind.json_decode and not kind.model_not_found and not kind.timeout:

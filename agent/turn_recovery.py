@@ -584,6 +584,50 @@ def recover_after_classification(
     return False, recovered_with_pool
 
 
+def _recover_delivered_partial_text(agent: Any, messages: Any) -> str:
+    """Visible assistant text already delivered this turn ("" when none).
+
+    ``build_api_request`` resets ``_current_streamed_assistant_text`` on every
+    attempt, so after a mid-stream death + continuation + pre-stream 429 the
+    live accumulator is empty and the only record is the
+    ``_length_continuation_fragment`` rows the truncation path appended (#119001).
+    """
+    try:
+        _live = getattr(agent, "_current_streamed_assistant_text", "") or ""
+    except Exception:
+        _live = ""
+    if isinstance(_live, str) and _live.strip():
+        return _live.strip()
+    _parts = [
+        m["content"].strip() for m in messages or ()
+        if isinstance(m, dict) and m.get("_length_continuation_fragment")
+        and isinstance(m.get("content"), str) and m["content"].strip()
+    ]
+    if not _parts:
+        return ""
+    # Same glue as _join_truncated_parts: newline where two parts would stick.
+    _joined = ""
+    for _part in _parts:
+        if _joined and not _joined[-1].isspace() and not _part[0].isspace():
+            _joined += "\n"
+        _joined += _part
+    return _joined.strip()
+
+
+def _with_delivered_partial(final_response: str, error_summary: str, agent: Any, messages: Any) -> tuple:
+    """Prepend delivered partial text to a terminal error body ("" unchanged).
+
+    Returns ``(final_response, keep_partial)``; callers set ``result["partial"]``
+    when ``keep_partial`` so the gateway emits ``payload.partial`` and surfaces
+    retain the bubble instead of clearing it. ``final_response`` must stay
+    distinct from ``error`` — that inequality is the retention contract.
+    """
+    _delivered = _recover_delivered_partial_text(agent, messages)
+    if not _delivered or _delivered.strip() == (error_summary or "").strip():
+        return final_response, False
+    return f"{_delivered}\n\n{final_response}", True
+
+
 def _failed_turn_result(final_response: str, messages: Any, api_call_count: int, error: str) -> Dict[str, Any]:
     """Base failed-turn result dict shared by the two terminal paths."""
     return {
@@ -738,14 +782,19 @@ def nonretryable_client_error_result(
             classified=classified, summary=_nonretryable_summary, messages=messages,
             api_call_count=api_call_count, provider=provider, base_url=base_url, model=model,
         )
-    result = _failed_turn_result(_nonretryable_summary, messages, api_call_count, _nonretryable_summary)
     # Same verdict fields as the max-retries path: without them the UI descriptor
     # (agent/error_surface.py) reads a rejected OAuth token as a retryable
     # "Provider error" and offers Retry instead of a re-login.
+    _final_response, _keep_partial = _with_delivered_partial(
+        _nonretryable_summary, _nonretryable_summary, agent, messages,
+    )
+    result = _failed_turn_result(_final_response, messages, api_call_count, _nonretryable_summary)
     result.update({
         "failure_reason": classified.reason.value,
         "failure_retryable": bool(classified.retryable),
     })
+    if _keep_partial:
+        result["partial"] = True
     return result
 
 
@@ -874,6 +923,15 @@ def max_retries_exhausted_result(
         # Present only for billing walls: (provider, billing_url, is_nous, message).
         "billing_block": _billing_block,
     })
+    # Retry-exhaustion after partial delivery (#119001): the text was already
+    # shown, so keep it as the reply (marked failed) instead of an error-only
+    # turn — the gateway flags ``partial`` and surfaces retain the bubble.
+    _final_response, _keep_partial = _with_delivered_partial(
+        _final_response, _final_summary, agent, messages,
+    )
+    if _keep_partial:
+        result["final_response"] = _final_response
+        result["partial"] = True
     return result
 
 
@@ -948,7 +1006,9 @@ def abort_turn_on_interrupt(
     _vlines(agent, f"⚡ {abort_message}")
     close_interrupted_tool_sequence(messages, interrupt_text)
     agent._persist_session(messages, conversation_history)
-    agent.clear_interrupt()
+    # The turn was stopped, not rebuilt: a pending steer was aimed at this turn's next
+    # tool iteration, which will no longer happen — drop it (hard-cancel semantics).
+    agent.clear_interrupt(hard_cancel=True)
     return {
         "final_response": interrupt_text, "messages": messages, "api_calls": api_call_count,
         "completed": False, "interrupted": True,

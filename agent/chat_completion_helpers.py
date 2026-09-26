@@ -1825,12 +1825,12 @@ def _buffer_fallback_notice(agent, notice: str) -> None:
         agent._pending_fallback_notice = [str(pending), notice] if pending else [notice]
 
 
-def try_activate_fallback(agent, reason: "FailoverReason | None" = None) -> bool:
+def try_activate_fallback(agent, reason: "FailoverReason | None" = None, reset_at=None) -> bool:
     """Switch to the next fallback model/provider in the chain; False when exhausted. Swaps client,
     model slug and provider in place so the retry loop continues on the new backend; client
     construction goes through resolve_provider_client (no duplicated provider→key mappings)."""
     from agent.fallback_cooldown import _arm_rate_limit_cooldown
-    cooldown_seconds = _arm_rate_limit_cooldown(agent, reason)
+    cooldown_seconds = _arm_rate_limit_cooldown(agent, reason, reset_at=reset_at)
     while True:
         if agent._fallback_index >= len(agent._fallback_chain):
             return _fallback_chain_exhausted(agent, reason)
@@ -2214,6 +2214,48 @@ def _build_partial_stream_stub(role, full_content, full_reasoning, model_name, u
 _SSE_CONN_PHRASES = ("connection lost", "connection reset", "connection closed", "connection terminated",
     "network error", "network connection", "terminated", "peer closed", "broken pipe",
     "upstream connect error")
+
+
+def _rejects_stream_options(exc: BaseException) -> bool:
+    """A 400/422 whose body names ``stream_options`` as an unknown/extra field: strict
+    OpenAI-compatible endpoints (Azure AI Foundry MaaS, Pydantic ``extra_forbidden``) reject
+    the usage extension outright (#9705). Distinct from "stream not supported", which flips
+    the whole session to non-streaming."""
+    if getattr(exc, "status_code", None) not in (400, 422):
+        return False
+    body = f"{getattr(exc, 'body', '') or ''} {exc}".lower()
+    return "stream_options" in body and any(
+        k in body for k in ("extra", "not supported", "unrecognized", "unexpected", "unknown"))
+
+
+_STREAM_RETRY_BACKOFF_BASE_S = 1.0
+_STREAM_RETRY_BACKOFF_CAP_S = 4.0
+
+
+def _stream_retry_backoff_seconds(attempt: int) -> float:
+    """Delay before stream-level reconnect ``attempt`` (0-based): 1s, 2s, 4s, capped."""
+    return min(_STREAM_RETRY_BACKOFF_BASE_S * (2 ** max(0, attempt)), _STREAM_RETRY_BACKOFF_CAP_S)
+
+
+def _wait_stream_retry_backoff(agent, delay: float) -> bool:
+    """Sleep ``delay`` seconds in 0.1s steps, returning False as soon as the
+    agent is interrupted (so /stop is never held hostage by a backoff)."""
+    deadline = time.monotonic() + max(0.0, delay)
+    while True:
+        if getattr(agent, "_interrupt_requested", False):
+            return False
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return True
+        time.sleep(min(0.1, remaining))
+
+
+def _anthropic_connection_error_types() -> tuple:
+    try:
+        from anthropic import APIConnectionError as _AnthropicConnErr
+    except Exception:
+        return ()
+    return (_AnthropicConnErr,)
 
 
 def _is_sse_connection_error(exc: BaseException) -> bool:
@@ -2694,8 +2736,9 @@ class _StreamingCall(StreamingWaitMonitor):
         return usage, finish_reason
 
     def _open_chat_stream(self, stream_kwargs: dict[str, Any]):
-        # Native Gemini rejects OpenAI's usage-streaming extension.
-        if not is_native_gemini_base_url(self.agent.base_url):
+        # Native Gemini rejects OpenAI's usage-streaming extension; so do strict endpoints that
+        # already 4xx'd on it this session (``_stream_options_unsupported``, see #9705).
+        if not is_native_gemini_base_url(self.agent.base_url) and not getattr(self.agent, "_stream_options_unsupported", False):
             stream_kwargs["stream_options"] = {"include_usage": True}
         request_client = self._attempt_request_client = self.clients.set_client(
             self.agent._create_request_openai_client(reason="chat_completion_stream_request", api_kwargs=stream_kwargs))
@@ -3064,6 +3107,9 @@ class _StreamingCall(StreamingWaitMonitor):
             error=e, attempt=attempt + 2, max_attempts=max_retries + 1, mid_tool_call=mid_tool_call, diag=self.clients.diag)
         self._cancel_current_stream_attempt(reason)
         self.clients.close_once(reason)
+        # Exponential backoff between stream-level reconnects (back-to-back retries
+        # hammer a provider that just dropped us). Interruptible: /stop exits at once.
+        _wait_stream_retry_backoff(self.agent, _stream_retry_backoff_seconds(attempt))
 
     def _maybe_disable_streaming(self, e) -> None:
         """Flip to non-streaming when the provider rejects streaming outright or
@@ -3096,11 +3142,25 @@ class _StreamingCall(StreamingWaitMonitor):
             logger.debug("Streaming worker caught %s after request cancellation — exiting without retry.", type(e).__name__)
             return False
         _is_timeout = isinstance(e, (_httpx.ReadTimeout, _httpx.ConnectTimeout, _httpx.PoolTimeout))
-        _is_conn_err = isinstance(e, (_httpx.ConnectError, _httpx.RemoteProtocolError, ConnectionError))
+        # ReadError: abort/reset mid-body (stale-kill shutdown under a parked reader,
+        # ECONNRESET) — the retry loop owns recovery.
+        # anthropic.APIConnectionError: the Anthropic SDK wraps connect/read drops
+        # (incl. stale-kill aborts) in its own type, not httpx's.
+        _is_conn_err = isinstance(e, (_httpx.ConnectError, _httpx.ReadError, _httpx.RemoteProtocolError, ConnectionError,
+                                      *_anthropic_connection_error_types()))
         _is_stream_parse_err = self.agent._is_provider_stream_parse_error(e)
         _is_empty_stream = isinstance(e, EmptyStreamError)
         _is_sse_conn_err = not _is_timeout and not _is_conn_err and _is_sse_connection_error(e)
         _is_transient = _is_timeout or _is_conn_err or _is_sse_conn_err or _is_stream_parse_err
+
+        if not self.deltas_were_sent["yes"] and not getattr(self.agent, "_stream_options_unsupported", False) and _rejects_stream_options(e):
+            # Nothing streamed yet: drop the usage extension for this session and re-open.
+            self.agent._stream_options_unsupported = True
+            logger.info("Endpoint rejected stream_options (HTTP %s); retrying without it for this session.",
+                        getattr(e, "status_code", None))
+            self._cancel_current_stream_attempt("stream_options_rejected_retry")
+            self.clients.close_once("stream_options_rejected_retry")
+            return True
 
         if self.deltas_were_sent["yes"]:
             # Died AFTER tokens were delivered: normally no retry (would duplicate

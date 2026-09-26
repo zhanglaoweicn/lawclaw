@@ -3,6 +3,7 @@ headers, redirect header stripping, exception-group unwrapping, auth/session-exp
 method-not-found detection and connect-error formatting. Split from tools/mcp_tool.py."""
 
 import asyncio
+import contextlib
 import errno
 import importlib
 import logging
@@ -60,6 +61,68 @@ class NonMcpEndpointError(ConnectionError):
     """An HTTP MCP URL served a non-MCP 2xx (e.g. ``text/html``). Non-retryable: every attempt gets
     the same page, so backoff is skipped and the server fails immediately. Subclasses ConnectionError
     so broad catches still see a connection problem."""
+
+
+# Streamable-HTTP rejection statuses an SSE-only server (or its load balancer) produces for the
+# chunked ``initialize`` POST: Bad Request, Method Not Allowed, Not Acceptable, Length Required.
+_STREAMABLE_REJECT_STATUSES = (400, 405, 406, 411)
+
+
+def _is_streamable_http_rejection(exc: BaseException) -> bool:
+    """True when a Streamable-HTTP connect failure looks like a transport mismatch rather than a
+    broken server: a 400-family rejection of the initialize POST, or the SDK's opaque INTERNAL_ERROR
+    (-32603 ``Server returned an error response``) it maps such rejections to on mcp >= 2.0 (error
+    class per PR #104363, @RohithPariki). Timeouts and auth errors never qualify — neither carries
+    these markers — so a slow or 401ing server is not retried on the wrong transport.
+    """
+    root = _unwrap_exception_group(exc)
+    if getattr(getattr(root, "response", None), "status_code", None) in _STREAMABLE_REJECT_STATUSES:
+        return True
+    code = getattr(getattr(root, "error", None), "code", None)
+    return code == -32603 and "server returned an error response" in str(root).lower()
+
+
+_HTTP_REJECTION_BODY_CHARS = 300
+
+
+def _make_http_rejection_recorder(sink: dict):
+    """httpx response hook for the owned Streamable HTTP client: remembers the last 4xx/5xx the server
+    sent (status, method, URL, head of the body). mcp >= 2.0 folds a non-2xx whose body it cannot
+    parse as a JSON-RPC error into the opaque ``-32603 Server returned an error response`` — the
+    status and the server's own words (e.g. ``400 {"code":-32020,"message":"Unsupported
+    MCP-Protocol-Version"}``) never reach the exception, so this is the only place they can be
+    observed. SSE bodies are never read (a stream would block the hook)."""
+
+    async def _record(response):
+        if response.status_code < 400:
+            return
+        body = ""
+        if response.headers.get("content-type", "").split(";")[0].strip().lower() != "text/event-stream":
+            try:
+                raw = await response.aread()  # buffered: the SDK's own aread() afterwards sees the same bytes
+                body = " ".join(raw[:_HTTP_REJECTION_BODY_CHARS * 4].decode("utf-8", "replace").split())
+            except Exception:  # the failure itself is still reported, just without the body
+                body = ""
+        sink.update(status=response.status_code, method=response.request.method,
+                    url=str(response.request.url), body=body[:_HTTP_REJECTION_BODY_CHARS])
+
+    return _record
+
+
+def _describe_http_failure(exc: BaseException, rejection: dict) -> str:
+    """``str(root cause)`` of a Streamable HTTP connect failure; when that root is the SDK's opaque
+    ``-32603 Server returned an error response`` and the recorder saw the rejection, the HTTP status,
+    request URL and body head are appended so the message names what the server actually said."""
+    root = _unwrap_exception_group(exc)
+    text = str(root)
+    opaque = (getattr(getattr(root, "error", None), "code", None) == -32603
+              and "server returned an error response" in text.lower())
+    if not (opaque and rejection):
+        return text
+    detail = f"HTTP {rejection['status']} from {rejection['method']} {rejection['url']}"
+    if rejection["body"]:
+        detail += f": {rejection['body']}"
+    return f"{text} ({detail})"
 
 
 def _unwrap_exception_group(exc: BaseException) -> BaseException:
@@ -210,6 +273,73 @@ def _make_redirect_header_stripper(original_url, *, strict: bool = False,
             while _name in headers:
                 del headers[_name]
     return _strip_on_cross_origin_redirect
+
+
+# Wire-body cap, applied at the httpx transport before the SDK buffers/JSON-parses a response. A
+# hostile or misbehaving remote MCP server can stream an unbounded catalog/tool-result body and none
+# of the post-parse limits (resource cap, tool-result truncation) run before the parse blows up.
+# Finite HTTP bodies are capped at this many bytes (a larger Content-Length is rejected up front);
+# each SSE *event* is capped, with the counter reset at completed event boundaries so a long-lived
+# stream and its keepalives have no cumulative limit. Violations raise the SDK httpx's ReadError and
+# flow through the ordinary transport teardown/reconnect path (#66092).
+_MCP_HTTP_MAX_BODY_BYTES = 10 * 1024 * 1024
+_SSE_EVENT_BOUNDARIES = (b"\n\n", b"\r\n\r\n")
+
+
+def _make_mcp_body_cap_transport(httpx_mod, inner_transport, limit: int = _MCP_HTTP_MAX_BODY_BYTES):
+    """Wrap ``inner_transport`` so every response body is size-capped. ``httpx_mod`` must be the SDK's
+    own httpx module (``sdk_httpx()``): the transport is handed to that SDK's ``AsyncClient``."""
+
+    class _CappedStream(httpx_mod.AsyncByteStream):
+        def __init__(self, inner, is_sse: bool, url: str):
+            self._inner, self._is_sse, self._url = inner, is_sse, url
+
+        def _reject(self, kind: str):
+            return httpx_mod.ReadError(f"MCP {kind} exceeds {limit} bytes (from {self._url})")
+
+        async def __aiter__(self):
+            counted = 0
+            async for chunk in self._inner:
+                if self._is_sse:
+                    # Bytes up to the last completed event boundary belong to finished events (they must
+                    # still fit the per-event cap together with the carried prefix); the remainder starts
+                    # the next event's budget.
+                    boundary_end = max(chunk.rfind(sep) + len(sep) if sep in chunk else -1 for sep in _SSE_EVENT_BOUNDARIES)
+                    if boundary_end != -1:
+                        if counted + boundary_end > limit:
+                            raise self._reject("SSE event")
+                        counted = len(chunk) - boundary_end
+                    else:
+                        counted += len(chunk)
+                else:
+                    counted += len(chunk)
+                if counted > limit:
+                    raise self._reject("SSE event" if self._is_sse else "HTTP response")
+                yield chunk
+
+        async def aclose(self):
+            await self._inner.aclose()
+
+    class _BodyCapTransport(httpx_mod.AsyncBaseTransport):
+        def __init__(self, inner):
+            self._inner = inner
+
+        async def handle_async_request(self, request):
+            response = await self._inner.handle_async_request(request)
+            declared = response.headers.get("content-length")
+            with contextlib.suppress(ValueError):  # malformed header: the streamed cap still applies
+                if declared is not None and int(declared) > limit:
+                    await response.aclose()
+                    raise httpx_mod.ReadError(f"MCP HTTP response declares Content-Length {declared} > {limit} "
+                                              f"bytes cap (from {request.url})")
+            is_sse = "text/event-stream" in response.headers.get("content-type", "").lower()
+            response.stream = _CappedStream(response.stream, is_sse, str(request.url))
+            return response
+
+        async def aclose(self):
+            await self._inner.aclose()
+
+    return _BodyCapTransport(inner_transport)
 
 
 def _exc_children(exc: BaseException) -> List[BaseException]:

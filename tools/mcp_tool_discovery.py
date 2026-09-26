@@ -19,6 +19,26 @@ from tools.mcp_tool_schema import MCP_TOOL_NAME_PREFIX
 
 logger = logging.getLogger("tools.mcp_tool")
 
+# Default max concurrent MCP server connections per discovery pass (one unbounded
+# `asyncio.gather` spawned every server's subprocess tree simultaneously); config.yaml
+# ``mcp.discovery_concurrency`` overrides it, 0 = unlimited (#117373).
+_DISCOVERY_CONNECT_CONCURRENCY = 4
+
+
+def _discovery_connect_concurrency() -> int:
+    """``mcp.discovery_concurrency`` from config (0 = unlimited); a non-integer or negative value
+    warns and falls back to the default rather than silently running unbounded."""
+    try:
+        from hermes_cli.config import load_config
+        raw = (load_config().get("mcp") or {}).get("discovery_concurrency", _DISCOVERY_CONNECT_CONCURRENCY)
+    except Exception:
+        return _DISCOVERY_CONNECT_CONCURRENCY
+    if isinstance(raw, bool) or not isinstance(raw, int) or raw < 0:
+        logger.warning("mcp.discovery_concurrency=%r is not a non-negative integer; using %d",
+                       raw, _DISCOVERY_CONNECT_CONCURRENCY)
+        return _DISCOVERY_CONNECT_CONCURRENCY
+    return raw
+
 
 def _record_connect_failure(server_name: str) -> None:
     """Stamp a geometric, capped retry cooldown after a failed connect (under ``_lock``)."""
@@ -293,9 +313,22 @@ def _register_lazy_from_cache(new_servers: Dict[str, dict]) -> Tuple[Dict[str, d
 
 
 async def _discover_all(new_servers: Dict[str, dict]) -> None:
-    """Connect every candidate concurrently; record per-server outcome."""
+    """Connect every candidate concurrently; record per-server outcome.
+
+    A flat cap keeps one boot from spawning every server's subprocess tree
+    simultaneously (RAM/CPU spike, EMFILE risk); 0 (unlimited) keeps the
+    original unbounded gather."""
+    cap = _discovery_connect_concurrency()
+    semaphore = asyncio.Semaphore(cap) if cap > 0 else None
+
+    async def _connect_bounded(name: str, cfg: dict):
+        if semaphore is None:
+            return await _discover_and_register_server(name, cfg)
+        async with semaphore:
+            return await _discover_and_register_server(name, cfg)
+
     results = await asyncio.gather(
-        *(_discover_and_register_server(name, cfg) for name, cfg in new_servers.items()),
+        *(_connect_bounded(name, cfg) for name, cfg in new_servers.items()),
         return_exceptions=True)
     for name, result in zip(new_servers, results):
         if isinstance(result, BaseException):

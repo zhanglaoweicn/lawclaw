@@ -120,6 +120,11 @@ memory:
   user_char_limit: 2000
   nudge_interval: 10
 
+mcp:
+  # 每次启动的 MCP 服务器并发连接上限（上游 2026-09 新增）：6 台元典服务器同时连接会
+  # 造成瞬时进程/连接峰值；0 = 不限（回到旧的 unbounded gather）。
+  discovery_concurrency: 4
+
 mcp_servers:
   yuandian-law:
     url: "https://open.chineselaw.com/mcp/law/stream"

@@ -15,6 +15,7 @@ import ssl
 import time
 from typing import Any, Dict, Optional
 
+from agent.api_error_summary import is_provider_stream_parse_error
 from agent.error_classifier import FailoverReason, classify_api_error
 from agent.turn_overflow import recover_from_overflow
 from agent.turn_recovery import (
@@ -199,7 +200,8 @@ def handle_api_error(
 
     _ue = settle_unrecovered_error(
         agent, api_error=api_error, classified=classified, _retry=_retry, status_code=status_code,
-        error_msg=error_msg, is_context_length_error=is_context_length_error,
+        error_msg=error_msg, error_context=error_context,
+        is_context_length_error=is_context_length_error,
         is_rate_limited=is_rate_limited, _is_zai_coding_overload=_is_zai_coding_overload,
         _provider=_provider, _base=_base, _model=_model, messages=messages,
         api_messages=api_messages, api_kwargs=api_kwargs, active_system_prompt=active_system_prompt,
@@ -215,7 +217,7 @@ def handle_api_error(
 
 def _is_local_validation_error(api_error: Any) -> bool:
     """ValueError/TypeError are local bugs, except: UnicodeEncodeError (surrogate recovery
-    path), json.JSONDecodeError (transient provider/network failure, must retry),
+    path), json.JSONDecodeError / provider stream-parse ValueErrors (transient provider/network failure, must retry),
     ssl.SSLError (inherits OSError *and* ValueError — a TLS failure is not a local bug)
     and "NoneType is not iterable" TypeErrors (upstream shape mismatches, e.g. Codex
     response.completed.output=null — retryable so the fallback path runs)."""
@@ -224,6 +226,8 @@ def _is_local_validation_error(api_error: Any) -> bool:
     if isinstance(api_error, (UnicodeEncodeError, json.JSONDecodeError, ssl.SSLError)):
         return False
     _text = str(api_error).lower()
+    if is_provider_stream_parse_error(api_error):
+        return False  # corrupted provider SSE chunk (jiter), transient — not a local bug (#65147)
     return not (isinstance(api_error, TypeError) and "nonetype" in _text and "not iterable" in _text)
 
 
@@ -252,7 +256,7 @@ def settle_unrecovered_error(
     is_context_length_error: Any, is_rate_limited: Any, _is_zai_coding_overload: Any,
     _provider: Any, _base: Any, _model: Any, messages: Any, api_messages: Any, api_kwargs: Any,
     active_system_prompt: Any, conversation_history: Any, approx_tokens: Any, retry_count: Any,
-    max_retries: Any, compression_attempts: Any, api_call_count: Any,
+    max_retries: Any, compression_attempts: Any, api_call_count: Any, error_context: Any = None,
 ) -> UnrecoveredErrorVerdict:
     """Decide the fate of an API error that every recovery chain declined: local validation /
     non-retryable client errors (Copilot stale-credential self-heal first, then fallback, then a

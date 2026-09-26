@@ -65,17 +65,8 @@ skills:
     - ai-governance-use-case-triage
     - ai-governance-vendor-ai-review
     - employment-cold-start-interview
-    - employment-expansion-kickoff
-    - employment-expansion-update
     - employment-handbook-updates
     - employment-hiring-review
-    - employment-internal-investigation
-    - employment-international-expansion
-    - employment-investigation-add
-    - employment-investigation-memo
-    - employment-investigation-open
-    - employment-investigation-query
-    - employment-investigation-summary
     - employment-leave-tracker
     - employment-log-leave
     - employment-policy-drafting
@@ -112,6 +103,16 @@ skills:
     - regulatory-policy-redraft
     - regulatory-reg-feed-watcher
 
+    # 断链修复 / 高价值补充（2026-09-27 技能库修复迭代）
+    - litigation-demand-intake
+    - commercial-escalation-flagger
+    - commercial-stakeholder-summary
+    - commercial-renewal-tracker
+    - litigation-legal-hold
+    - litigation-subpoena-triage
+    - civil-cargo-damage-claim
+    - legal/legal-deadline-briefing
+    - legal/legal-profile-interview-ops
 memory:
   provider: ""
   memory_enabled: true

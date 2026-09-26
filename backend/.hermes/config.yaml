@@ -122,6 +122,14 @@ skills:
     - housing-lease-dispute
     - work-injury-claim
     - criminal-detention-meeting
+
+    # 员工违纪内部调查（2026-09-27 按中国法重写并启用）
+    - employment-internal-investigation
+    - employment-investigation-open
+    - employment-investigation-add
+    - employment-investigation-query
+    - employment-investigation-memo
+    - employment-investigation-summary
 memory:
   provider: ""
   memory_enabled: true

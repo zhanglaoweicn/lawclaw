@@ -6,7 +6,7 @@ argument-hint: "[法规名称，或粘贴法规文本/摘要]"
 
 # /policy-diff
 
-1. 读取 `./CLAUDE.md` → 政策库索引。
+1. 读取 `$LEGAL_AGENT_PROFILE_HOME/regulatory-legal/profile.md` → 政策库索引。
 2. 使用以下工作流。
 3. 从法规中提取要求。与已索引的政策匹配。
 4. 输出：逐要求的差距分析，哪些政策需要更新。
@@ -25,7 +25,7 @@ argument-hint: "[法规名称，或粘贴法规文本/摘要]"
 
 ## 加载上下文
 
-`./CLAUDE.md` → 政策库索引（政策、位置、负责人）。
+`$LEGAL_AGENT_PROFILE_HOME/regulatory-legal/profile.md` → 政策库索引（政策、位置、负责人）。
 
 ## 范围完整性
 

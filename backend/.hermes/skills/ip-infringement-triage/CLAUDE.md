@@ -1,25 +1,23 @@
 <!--
-CONFIGURATION LOCATION
+配置与画像位置（LawClaw 桌面版）
 
-User-specific configuration for this plugin lives at a version-independent path that survives plugin updates:
+本插件的实务画像（律师个人／团队的执业设定、审查阈值、风险口径、输出格式）保存在：
 
-  ~/.claude/plugins/config/claude-for-legal/ip-legal/CLAUDE.md
+  $LEGAL_AGENT_PROFILE_HOME/ip-legal/profile.md
 
-Rules for every skill, command, and agent in this plugin:
-1. READ configuration from that path. Not from this file.
-2. If that file does not exist or still contains [PLACEHOLDER] markers, STOP before doing substantive work. Say: "This plugin needs setup before it can give you useful output. Run /ip-legal:cold-start-interview — it takes about 10-15 minutes and every command in this plugin depends on it. Without it, outputs will be generic and may not match how your practice actually works." Do NOT proceed with placeholder or default configuration. The only skills that run without setup are /ip-legal:cold-start-interview itself and any --check-integrations flag.
-3. Setup and cold-start-interview WRITE to that path, creating parent directories as needed.
-4. On first run after a plugin update, if a populated CLAUDE.md exists at the old cache path
-   (~/.claude/plugins/cache/claude-for-legal/ip-legal/<version>/CLAUDE.md for any version)
-   but not at the config path, copy it forward to the config path before proceeding.
-5. This file (the one you are reading) is the TEMPLATE. It ships with the plugin and shows the
-   structure the config should have. It is replaced on every plugin update. Never write user data here.
-
-**Shared company profile.** Company-level facts (who you are, what you do, where you operate, your risk posture, key people) live in `~/.claude/plugins/config/claude-for-legal/company-profile.md` — one level above this file, shared by all 12 plugins. Read it before this plugin's practice profile. If it doesn't exist, this plugin's setup will create it.
+规则：
+1. 从该路径读取配置；不要从本文件读取用户数据。
+2. 若该文件不存在或仍含 [PLACEHOLDER]：**照常工作，不要拒绝、不要要求用户先去配置**。
+   按中国法与通用最佳实践给出完整输出，并在结尾用一句话提示律师：
+   跑「知识产权插件初始化访谈」技能卡（技能页搜索即可）可让本技能的输出贴合其执业口径。
+3. 冷启动访谈与各项设置写入该路径，必要时创建父目录。
+4. 本文件是**模板**，随技能分发、展示配置应有的结构；请勿把用户数据写在这里。
+5. 跨插件共享的公司画像在 `$LEGAL_AGENT_PROFILE_HOME/company-profile.md`
+   （位于 ip-legal 目录的上层），读取本插件画像前先读它；不存在时由冷启动访谈创建。
 -->
 
 # 知识产权实务画像
-*此文件由首次运行时的冷启动访谈编写。在此之前，它是模板。如看到 `[PLACEHOLDER]` 值，运行 `/ip-legal:cold-start-interview` 接受访谈。*
+*此文件由首次运行时的冷启动访谈编写。在此之前，它是模板。如看到 `[PLACEHOLDER]` 值，运行 `「知识产权插件初始化访谈」` 接受访谈。*
 
 *一旦填写：直接编辑此文件。本插件中每个技能在执行前都读取它。在此修正一处问题，处处修复。*
 
@@ -56,7 +54,7 @@ Rules for every skill, command, and agent in this plugin:
 | 文档存储（Drive / SharePoint / 飞书文档） | [PLACEHOLDER ✓/✗] | 用户为每次审查直接上传协议和证据 |
 | 飞书/Slack | [PLACEHOLDER ✓/✗] | 预警和摘要直接发送而非推送至频道 |
 
-*重新检查：`/ip-legal:cold-start-interview --check-integrations`*
+*重新检查：`「知识产权插件初始化访谈」 --check-integrations`*
 
 ---
 
@@ -158,7 +156,7 @@ Rules for every skill, command, and agent in this plugin:
 
 **文件访问失败。** 不保持沉默。
 
-**验证日志。** 记录到 `~/.claude/plugins/config/claude-for-legal/ip-legal/verification-log.md`。
+**验证日志。** 记录到 `$LEGAL_AGENT_PROFILE_HOME/ip-legal/verification-log.md`。
 
 ---
 
@@ -190,9 +188,9 @@ Rules for every skill, command, and agent in this plugin:
 
 ## 知识产权组合
 
-**登记册：** `~/.claude/plugins/config/claude-for-legal/ip-legal/portfolio.yaml`
+**登记册：** `$LEGAL_AGENT_PROFILE_HOME/ip-legal/portfolio.yaml`
 
-*该登记册保存团队追踪的每一件商标、专利和著作权注册，含管辖域、注册号、续展日期和状态。在冷启动时从知识产权管理系统构建（如已连接）或从用户提供的导出构建。由 `/ip-legal:portfolio` 更新并由续展监测器消费。*
+*该登记册保存团队追踪的每一件商标、专利和著作权注册，含管辖域、注册号、续展日期和状态。在冷启动时从知识产权管理系统构建（如已连接）或从用户提供的导出构建。由 `「知识产权组合盘点」` 更新并由续展监测器消费。*
 
 **最近审计日期：** [PLACEHOLDER — YYYY-MM-DD]
 
@@ -314,5 +312,5 @@ Rules for every skill, command, and agent in this plugin:
 
 ---
 
-*重新运行访谈：`/ip-legal:cold-start-interview --redo`*
-*仅重新检查集成：`/ip-legal:cold-start-interview --check-integrations`*
+*重新运行访谈：`「知识产权插件初始化访谈」 --redo`*
+*仅重新检查集成：`「知识产权插件初始化访谈」 --check-integrations`*

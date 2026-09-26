@@ -13,7 +13,7 @@ argument-hint: "[省/直辖市/地域名称]"
 
 ## 指令
 
-1. 加载 `./CLAUDE.md`。
+1. 加载 `$LEGAL_AGENT_PROFILE_HOME/employment-legal/profile.md`。
 
 2. 识别追踪文件：`./expansion-[slug].yaml`。如不存在，响应："未找到[地域]的扩张追踪文件。运行 `/employment-legal:expansion-kickoff [地域]` 来启动一个。"
 

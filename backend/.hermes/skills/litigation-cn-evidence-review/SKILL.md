@@ -26,7 +26,7 @@ argument-hint: "[证据材料或证据目录]"
 
 ## 案件背景
 
-检查实践层级 `CLAUDE.md` 中的 `## 案件工作区`。如已启用且无活跃案件，询问："这是哪个案件？运行 `litigation-matter-workspace switch <标识>` 或说 `实践层级`。" 加载活跃案件的 `matter.md`——尤其是案件理论、诉讼文书、管辖法院、案件阶段。将输出写入案件文件夹 `$LEGAL_AGENT_PROFILE_HOME/litigation-legal/matters/<案件标识>/evidence-review/`。
+检查实践层级 实务画像 `$LEGAL_AGENT_PROFILE_HOME/litigation-legal/profile.md` 中的 `## 案件工作区`。如已启用且无活跃案件，询问："这是哪个案件？运行 `litigation-matter-workspace switch <标识>` 或说 `实践层级`。" 加载活跃案件的 `matter.md`——尤其是案件理论、诉讼文书、管辖法院、案件阶段。将输出写入案件文件夹 `$LEGAL_AGENT_PROFILE_HOME/litigation-legal/matters/<案件标识>/evidence-review/`。
 
 ---
 
@@ -356,4 +356,4 @@ argument-hint: "[证据材料或证据目录]"
 
 ## 以下一步决策树结束输出
 
-依 `CLAUDE.md` `## 输出` 中的下一步决策树结束输出，定制为本次实际生成的内容——五个默认分支（补充取证、申请证据保全、准备质证意见、起草文书、等待观察）是起点，不是锁定。决策树是输出；律师作选择。
+依 实务画像 `$LEGAL_AGENT_PROFILE_HOME/litigation-legal/profile.md` `## 输出` 中的下一步决策树结束输出，定制为本次实际生成的内容——五个默认分支（补充取证、申请证据保全、准备质证意见、起草文书、等待观察）是起点，不是锁定。决策树是输出；律师作选择。

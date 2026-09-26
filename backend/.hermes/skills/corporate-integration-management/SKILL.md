@@ -23,7 +23,7 @@ argument-hint: "[--init | --contracts | --report | --update | --export [--format
 
 ## 事项上下文
 
-**事项上下文。** 检查实务级 CLAUDE.md 中的 `## 事项工作区`。如果 `Enabled` 为 `✗`（企业法务用户的默认值），则跳过本段其余内容——技能使用实务级上下文，事项机制不可见。如果已启用且无活跃事项，则询问："此操作是针对哪个事项？运行 `corporate-matter-workspace switch <事项简称>` 或说 `实务级`。"加载活跃事项的 `matter.md` 获取事项特定上下文和覆盖规则。将输出写入事项文件夹 `$LEGAL_AGENT_PROFILE_HOME/corporate-legal/matters/<事项简称>/`。除非 `跨事项上下文` 为 `开`，否则绝不读取其他事项的文件。
+**事项上下文。** 检查实务级 $LEGAL_AGENT_PROFILE_HOME/corporate-legal/profile.md 中的 `## 事项工作区`。如果 `Enabled` 为 `✗`（企业法务用户的默认值），则跳过本段其余内容——技能使用实务级上下文，事项机制不可见。如果已启用且无活跃事项，则询问："此操作是针对哪个事项？运行 `corporate-matter-workspace switch <事项简称>` 或说 `实务级`。"加载活跃事项的 `matter.md` 获取事项特定上下文和覆盖规则。将输出写入事项文件夹 `$LEGAL_AGENT_PROFILE_HOME/corporate-legal/matters/<事项简称>/`。除非 `跨事项上下文` 为 `开`，否则绝不读取其他事项的文件。
 
 ---
 
@@ -473,7 +473,6 @@ CSV 格式——每项一行，章节由 `section` 列指示。
 - 不就赔偿请求或公共机构违约提供建议。当同意被拒绝或截止日错过时，它会标记该情况——后果的法律分析由律师负责。
 - 不追踪业绩对赌表现。业绩对赌里程碑和付款日期作为参考日期出现在追踪器中，owner 设为 finance。业务部门负责数据。
 - 不在状态报告时实时读取合同。合同状态是律师在追踪器中更新的内容。本技能在报告时读取追踪器，而非合同本身。
-
 
 ## 公式注入防御
 

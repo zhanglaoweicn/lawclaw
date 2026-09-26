@@ -31,7 +31,7 @@ user-invocable: false
 
 ## 跟踪文件
 
-位于 `./gap-tracker.yaml`：
+位于 `$LEGAL_AGENT_PROFILE_HOME/regulatory-legal/gap-tracker.yaml`：
 
 ```yaml
 gaps:

@@ -36,11 +36,11 @@ category: legal
 落笔前逐条调用并确认返回 `sxx` 为“现行有效”：
 
 ```
-yuandian_rh_ft_detail(fgmc="中华人民共和国民法典", ftnum="第九百一十七条")
-yuandian_rh_ft_detail(fgmc="中华人民共和国民事诉讼法(2023修正)", ftnum="第一百零三条")
+yuandian_get_legal_article_detail(fgmc="中华人民共和国民法典", ftnum="第九百一十七条")
+yuandian_get_legal_article_detail(fgmc="中华人民共和国民事诉讼法(2023修正)", ftnum="第一百零三条")
 ```
 
-- 类案：`yuandian_case_vector_search(query=自然语言事实与争议点, wenshu_filter={"wenshu_type":"民事案件"})`
+- 类案：`yuandian_semantic_search_cases(query=自然语言事实与争议点, wenshu_filter={"wenshu_type":"民事案件"})`
 - 文书中每处引用标注来源 `[元典智库]`；未核验的先写 `[引用: 待核实]` 占位符，不得填空。
 - 民诉法条号已按 2023 修正（管辖＝第24条，起诉条件＝第122条，保全＝第103条），
   旧条号（第23、119、100条）会写错。

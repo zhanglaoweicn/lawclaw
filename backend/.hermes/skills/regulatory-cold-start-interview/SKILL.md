@@ -6,10 +6,10 @@ argument-hint: "[--redo | --check-integrations]"
 
 # /cold-start-interview
 
-1. 检查 `./CLAUDE.md`。如果已存在已填充的 CLAUDE.md（无 `[PLACEHOLDER]` 标记），跳过除非 `--redo`。如果 `--check-integrations`，跳过访谈——仅重新运行 Part 0 的"连接了什么？"检查并重写 `## 可用集成` 表。
+1. 检查 `$LEGAL_AGENT_PROFILE_HOME/regulatory-legal/profile.md`。如果已存在已填充的 CLAUDE.md（无 `[PLACEHOLDER]` 标记），跳过除非 `--redo`。如果 `--check-integrations`，跳过访谈——仅重新运行 Part 0 的"连接了什么？"检查并重写 `## 可用集成` 表。
 2. 使用以下访谈工作流。先 Part 0（角色 + 集成）→ 然后监测清单：哪些监管机构，政策在哪里，什么是重要的。
 3. 连接政策文件夹。索引政策。
-4. 写入 `./CLAUDE.md`。
+4. 写入 `$LEGAL_AGENT_PROFILE_HOME/regulatory-legal/profile.md`。
 
 ---
 
@@ -25,7 +25,7 @@ argument-hint: "[--redo | --check-integrations]"
 >
 > **2分钟**了解你的角色、执业设置和主要监管制度。**15分钟**添加完整的监测清单、重要度阈值、动态源频率、政策库索引和意见征集来源。
 >
-> 快速还是完整？（随时用 `/regulatory-legal:cold-start-interview --full` 升级。）
+> 快速还是完整？（随时用 `「监管合规初始化访谈」 --full` 升级。）
 
 ## 用户选择快速或完整后
 
@@ -163,11 +163,11 @@ argument-hint: "[--redo | --check-integrations]"
 
 告知用户：
 
-> "你的配置位于 `./CLAUDE.md`——一个你可以直接阅读和编辑的纯文本文件。你回答的任何内容都可以更改：
+> "你的配置位于 `$LEGAL_AGENT_PROFILE_HOME/regulatory-legal/profile.md`——一个你可以直接阅读和编辑的纯文本文件。你回答的任何内容都可以更改：
 >
 > - 直接编辑文件进行快速更改
-> - 运行 `/regulatory-legal:cold-start-interview --redo` 进行完整重访
-> - 运行 `/regulatory-legal:cold-start-interview --check-integrations` 重新检查连接了什么
+> - 运行 `「监管合规初始化访谈」 --redo` 进行完整重访
+> - 运行 `「监管合规初始化访谈」 --check-integrations` 重新检查连接了什么
 >
 > 人们最常调整的设置：监测清单（你实际关注的监管机构）、重要度阈值（什么算"立即"vs"摘要"vs"仅供参考"）、以及检查频率。"
 
@@ -186,6 +186,6 @@ argument-hint: "[--redo | --check-integrations]"
 >
 > - 当一个技能的输出感觉不对时，通常是一个需要调整的立场。输出会告诉你具体是哪一个。
 > - 你始终可以说"更新我的操作手册，偏好X"或"将我的升级阈值改为Y"。
-> - 运行 `/regulatory-legal:cold-start-interview --redo <section>` 对一部分进行重访，或直接编辑配置文件。
+> - 运行 `「监管合规初始化访谈」 --redo <section>` 对一部分进行重访，或直接编辑配置文件。
 >
 > 十分钟的设置给你一个可工作的配置。一个月的使用给你一个读起来像你自己写的配置。

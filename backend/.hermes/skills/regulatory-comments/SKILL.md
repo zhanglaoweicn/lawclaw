@@ -12,8 +12,8 @@ argument-hint: "[可选: --decide CMT-ID]"
 
 ## 加载上下文
 
-`./comment-tracker.yaml` → 所有已跟踪的征求意见稿及其状态。
-`./CLAUDE.md` → 默认意见征集决策负责人。
+`$LEGAL_AGENT_PROFILE_HOME/regulatory-legal/comment-tracker.yaml` → 所有已跟踪的征求意见稿及其状态。
+`$LEGAL_AGENT_PROFILE_HOME/regulatory-legal/profile.md` → 默认意见征集决策负责人。
 
 ## 默认视图——开放的征求意见期
 

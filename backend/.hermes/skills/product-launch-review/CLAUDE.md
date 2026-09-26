@@ -1,25 +1,23 @@
 <!--
-CONFIGURATION LOCATION
+配置与画像位置（LawClaw 桌面版）
 
-User-specific configuration for this plugin lives at a version-independent path that survives plugin updates:
+本插件的实务画像（律师个人／团队的执业设定、审查阈值、风险口径、输出格式）保存在：
 
-  ~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md
+  $LEGAL_AGENT_PROFILE_HOME/product-legal/profile.md
 
-Rules for every skill, command, and agent in this plugin:
-1. READ configuration from that path. Not from this file.
-2. If that file does not exist or still contains [PLACEHOLDER] markers, STOP before doing substantive work. Say: "本插件需要进行初始设置后才能为您提供有效输出。请运行 /product-legal:cold-start-interview —— 约需10-15分钟，本插件所有指令均依赖该设置。未完成设置前，输出内容将是通用模板，可能与您的实务操作不匹配。" Do NOT proceed with placeholder or default configuration. The only skills that run without setup are /product-legal:cold-start-interview itself and any --check-integrations flag.
-3. Setup and cold-start-interview WRITE to that path, creating parent directories as needed.
-4. On first run after a plugin update, if a populated CLAUDE.md exists at the old cache path
-   (~/.claude/plugins/cache/claude-for-legal/product-legal/<version>/CLAUDE.md for any version)
-   but not at the config path, copy it forward to the config path before proceeding.
-5. This file (the one you are reading) is the TEMPLATE. It ships with the plugin and shows the
-   structure the config should have. It is replaced on every plugin update. Never write user data here.
-
-**Shared company profile.** Company-level facts (who you are, what you do, where you operate, your risk posture, key people) live in `~/.claude/plugins/config/claude-for-legal/company-profile.md` — one level above this file, shared by all 12 plugins. Read it before this plugin's practice profile. If it doesn't exist, this plugin's setup will create it.
+规则：
+1. 从该路径读取配置；不要从本文件读取用户数据。
+2. 若该文件不存在或仍含 [PLACEHOLDER]：**照常工作，不要拒绝、不要要求用户先去配置**。
+   按中国法与通用最佳实践给出完整输出，并在结尾用一句话提示律师：
+   跑「产品合规初始化访谈」技能卡（技能页搜索即可）可让本技能的输出贴合其执业口径。
+3. 冷启动访谈与各项设置写入该路径，必要时创建父目录。
+4. 本文件是**模板**，随技能分发、展示配置应有的结构；请勿把用户数据写在这里。
+5. 跨插件共享的公司画像在 `$LEGAL_AGENT_PROFILE_HOME/company-profile.md`
+   （位于 product-legal 目录的上层），读取本插件画像前先读它；不存在时由冷启动访谈创建。
 -->
 
 # 产品法务实务画像
-*由冷启动访谈撰写于[DATE]。如显示 `[PLACEHOLDER]`，请运行 `/product-legal:cold-start-interview`。*
+*由冷启动访谈撰写于[DATE]。如显示 `[PLACEHOLDER]`，请运行 `「产品合规初始化访谈」`。*
 
 ---
 
@@ -59,7 +57,7 @@ Rules for every skill, command, and agent in this plugin:
 | 文档存储（飞书云文档/Google Drive/SharePoint） | [PLACEHOLDER ✓/✗] | 审查备忘录本地保存；种子文件手动提取 |
 | 飞书/Slack | [PLACEHOLDER ✓/✗] | 分流回复以文字形式内联输出，而非推送至频道 |
 
-*重新检查：`/product-legal:cold-start-interview --check-integrations`*
+*重新检查：`「产品合规初始化访谈」 --check-integrations`*
 
 ---
 
@@ -193,7 +191,7 @@ Rules for every skill, command, and agent in this plugin:
 
 **文件读取失败。** 当无法读取用户指向的文件时，不要无声失败。说明情况并提供替代方案。
 
-**验证日志。** 当您或用户核实了一个标记项时，将单行记录写入 `~/.claude/plugins/config/claude-for-legal/product-legal/verification-log.md`：
+**验证日志。** 当您或用户核实了一个标记项时，将单行记录写入 `$LEGAL_AGENT_PROFILE_HOME/product-legal/verification-log.md`：
 
 `[YYYY-MM-DD] [引用或事实] 由[姓名]对照[来源]核实 —— [结论：已确认 / 更正为X / 无法核实]`
 
@@ -255,7 +253,7 @@ Rules for every skill, command, and agent in this plugin:
 
 对于产品法务插件中的私人执业，一个"事项"通常是为特定客户举办的特定上线、功能或产品领域。同一客户-功能的上线审查、营销宣传检查和风险评估均应归属于同一事项工作空间。
 
-当事项工作空间启用时，技能在活跃事项的上下文中工作。使用 `/product-legal:matter-workspace new | list | switch | close | none` 管理事项。
+当事项工作空间启用时，技能在活跃事项的上下文中工作。使用 `「产品合规事项工作区」 new | list | switch | close | none` 管理事项。
 
 ---
 
@@ -334,4 +332,4 @@ Rules for every skill, command, and agent in this plugin:
 
 ---
 
-*重新运行：`/product-legal:cold-start-interview --redo`*
+*重新运行：`「产品合规初始化访谈」 --redo`*

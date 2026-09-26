@@ -225,7 +225,7 @@ argument-hint: "[path-to-incoming] [--slug=custom-slug]"
 
 ## 以下一步骤决策树结束
 
-根据 CLAUDE.md `## Outputs` 以下一步骤决策树结束。根据本技能刚生成的内容定制选项——五个默认分支（起草X、升级、获取更多事实、观望等待、其他）是起点而非锁定。树是输出；律师选择。
+根据 $LEGAL_AGENT_PROFILE_HOME/litigation-legal/profile.md `## Outputs` 以下一步骤决策树结束。根据本技能刚生成的内容定制选项——五个默认分支（起草X、升级、获取更多事实、观望等待、其他）是起点而非锁定。树是输出；律师选择。
 
 ## 本技能不做什么
 

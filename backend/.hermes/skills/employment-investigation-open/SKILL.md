@@ -13,7 +13,7 @@ argument-hint: "[指控的简要描述]"
 
 ## 指令
 
-1. 加载 `./CLAUDE.md`。
+1. 加载 `$LEGAL_AGENT_PROFILE_HOME/employment-legal/profile.md`。
 2. 运行立案模式：
    - 记录投诉/举报来源、时间、内容
    - 确定调查范围和需要核实的事实要点

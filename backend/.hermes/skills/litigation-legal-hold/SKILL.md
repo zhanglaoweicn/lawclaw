@@ -398,7 +398,7 @@ argument-hint: "[slug] [--issue | --refresh | --release | --status]"
 - `_log.yaml` — 全局案件日志
 - `[slug]/matter.md` — 案件背景
 - `[slug]/history.md` — 操作历史
-- `CLAUDE.md` — 企业规范
+- 实务画像 `$LEGAL_AGENT_PROFILE_HOME/litigation-legal/profile.md` — 企业规范
 - `[slug]/legal-hold-v[N].docx` — 保全通知文档
 - `[slug]/legal-hold-release.docx` — 解除通知文档
 

@@ -9,14 +9,14 @@ argument-hint: "[--redo]"
 
 # /cold-start-interview
 
-1. 检查 `./CLAUDE.md` 是否已存在。如果存在且用户未传递 `--redo` → "AI治理实践配置已存在于 [路径]。使用 `--redo` 重新运行。"
+1. 检查 `$LEGAL_AGENT_PROFILE_HOME/ai-governance-legal/profile.md` 是否已存在。如果存在且用户未传递 `--redo` → "AI治理实践配置已存在于 [路径]。使用 `--redo` 重新运行。"
 2. 运行以下访谈。一次进行一个部分。
 3. 选项后附 `(✓)` 标注推荐默认值。
 4. 当所有部分完成后，写入 `CLAUDE.md`。
 
 ```
-/ai-governance-legal:cold-start-interview
-/ai-governance-legal:cold-start-interview --redo
+「AI治理插件初始化访谈」
+「AI治理插件初始化访谈」 --redo
 ```
 
 ---
@@ -279,7 +279,7 @@ E. 有非正式的AI使用指南，但尚未形成正式政策文件
 
 **25. 你是否已运行隐私法律实践的冷启动访谈？**
 
-A. 是，隐私实践已配置（路径：`./CLAUDE.md`）
+A. 是，隐私实践已配置（路径：`$LEGAL_AGENT_PROFILE_HOME/ai-governance-legal/profile.md`）
 B. 否，仅配置AI治理 (→ AI技能将提示数据保护相关问题，建议同时配置隐私插件以获得完整数据保护合规支持)
 
 **26. 个人信息保护负责人（《个人信息保护法》第52条 `[法条原文]`）是否已任命？**
@@ -299,14 +299,14 @@ D. 不确定
 
 ## 写入配置
 
-访谈完成后，将所有回答编译为 `./CLAUDE.md`，结构如下：
+访谈完成后，将所有回答编译为 `$LEGAL_AGENT_PROFILE_HOME/ai-governance-legal/profile.md`，结构如下：
 
 ```markdown
 [工作成果头 — 根据问题22]
 
 # AI治理法律实践 — 实践配置
 
-> 本文件由 /ai-governance-legal:cold-start-interview 生成于 [日期]。
+> 本文件由 「AI治理插件初始化访谈」 生成于 [日期]。
 > 重新运行 `--redo` 以更新。
 
 ---
@@ -438,15 +438,15 @@ D. 不确定
 ## 完成后
 
 告知用户：
-> "AI治理实践配置已写入 `./CLAUDE.md`。
+> "AI治理实践配置已写入 `$LEGAL_AGENT_PROFILE_HOME/ai-governance-legal/profile.md`。
 >
 > **下一步建议：**
-> 1. 运行 `/ai-governance-legal:ai-inventory --full` 建立完整的AI系统清单
+> 1. 运行 `「AI使用清单盘点」 --full` 建立完整的AI系统清单
 > 2. 对每个已部署系统运行 `/ai-governance-legal:aia-generation` 进行评估
 > 3. 运行 `/ai-governance-legal:reg-gap-analysis` 检查法规合规差距
 > 4. 如果还没有AI使用政策，运行 `/ai-governance-legal:policy-starter` 起草
 >
-> 随时用 `/ai-governance-legal:customize` 调整配置。用 `/ai-governance-legal:cold-start-interview --redo` 从头重新运行。"
+> 随时用 `/ai-governance-legal:customize` 调整配置。用 `「AI治理插件初始化访谈」 --redo` 从头重新运行。"
 
 ---
 

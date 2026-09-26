@@ -14,7 +14,7 @@ argument-hint: "[省/直辖市/地域名称]"
 
 ## 指令
 
-1. 加载 `./CLAUDE.md` → 管辖范围、上报表。
+1. 加载 `$LEGAL_AGENT_PROFILE_HOME/employment-legal/profile.md` → 管辖范围、上报表。
 2. 运行用工扩张规划全流程：
    - 收集用工需求信息（人数、岗位类型、预计时间线）
    - 分析用工结构选择：直接用工 vs 劳务派遣 vs 业务外包

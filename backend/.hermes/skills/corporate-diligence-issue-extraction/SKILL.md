@@ -17,7 +17,7 @@ argument-hint: "[数据室文件夹(VDR folder)路径或类别名称]"
 
 ## 事项上下文 (Matter context)
 
-**事项上下文。** 检查实务级 CLAUDE.md 中的 `## 事项工作区(Matter context)`。如果 `Enabled` 为 `✗`（企业法务用户的默认配置），则跳过本段剩余部分——技能使用实践级别的上下文，事项机制不可见。如果已启用且无活跃事项，询问："这是哪个事项？运行 `corporate-matter-workspace switch <事项简称>` 或输入 `practice-level`。"加载活跃事项的 `matter.md` 获取事项特定上下文和覆盖规则。输出写入事项文件夹 `$LEGAL_AGENT_PROFILE_HOME/corporate-legal/matters/<事项简称>/`。除非 `跨事项上下文（Cross-matter context）` 为 `开（on）`，否则绝不读取其他事项的文件。
+**事项上下文。** 检查实务级 $LEGAL_AGENT_PROFILE_HOME/corporate-legal/profile.md 中的 `## 事项工作区(Matter context)`。如果 `Enabled` 为 `✗`（企业法务用户的默认配置），则跳过本段剩余部分——技能使用实践级别的上下文，事项机制不可见。如果已启用且无活跃事项，询问："这是哪个事项？运行 `corporate-matter-workspace switch <事项简称>` 或输入 `practice-level`。"加载活跃事项的 `matter.md` 获取事项特定上下文和覆盖规则。输出写入事项文件夹 `$LEGAL_AGENT_PROFILE_HOME/corporate-legal/matters/<事项简称>/`。除非 `跨事项上下文（Cross-matter context）` 为 `开（on）`，否则绝不读取其他事项的文件。
 
 ---
 
@@ -174,9 +174,9 @@ argument-hint: "[数据室文件夹(VDR folder)路径或类别名称]"
 
 ## 最后附上后续步骤决策树
 
-最后，请按照 CLAUDE.md 文件中的 `## 输出` 部分，创建后续步骤决策树。根据此技能的执行结果自定义选项——五个默认分支（起草 X、升级、获取更多事实、观察等待、其他）只是一个起点，并非最终方案。决策树本身就是输出结果；最终由律师选择。
+最后，请按照 $LEGAL_AGENT_PROFILE_HOME/corporate-legal/profile.md 文件中的 `## 输出` 部分，创建后续步骤决策树。根据此技能的执行结果自定义选项——五个默认分支（起草 X、升级、获取更多事实、观察等待、其他）只是一个起点，并非最终方案。决策树本身就是输出结果；最终由律师选择。
 
-如果提取出超过大约10条问题，或用户任何时候提问：提供仪表盘（见 CLAUDE.md `## 输出 → 数据密集产出的仪表盘选项`）。为本次产出定制：按严重程度计数（🔴 / 🟠 / 🟡 / 🟢）、按内部类别计数，以及带重要性、类别和数据室来源的可排序问题网格。
+如果提取出超过大约10条问题，或用户任何时候提问：提供仪表盘（见 $LEGAL_AGENT_PROFILE_HOME/corporate-legal/profile.md `## 输出 → 数据密集产出的仪表盘选项`）。为本次产出定制：按严重程度计数（🔴 / 🟠 / 🟡 / 🟢）、按内部类别计数，以及带重要性、类别和数据室来源的可排序问题网格。
 
 ## 本技能不做什么
 

@@ -24,14 +24,14 @@ argument-hint: "<new | list | switch | close | none> [简称]"
 3. 按 `$ARGUMENTS` 的第一个 token 调度：
    - `new` → 运行信息采集访谈，写入 `$LEGAL_AGENT_PROFILE_HOME/corporate-legal/matters/<简称>/matter.md`，初始化 `history.md` 和 `notes.md`。
    - `list` → 枚举 `$LEGAL_AGENT_PROFILE_HOME/corporate-legal/matters/*/matter.md`，打印表格，标记活跃事项。
-   - `switch` → 更新实务级 CLAUDE.md 中的 `活跃事项：` 行。
+   - `switch` → 更新实务级 $LEGAL_AGENT_PROFILE_HOME/corporate-legal/profile.md 中的 `活跃事项：` 行。
    - `close` → 将 `$LEGAL_AGENT_PROFILE_HOME/corporate-legal/matters/<简称>/` 移至 `$LEGAL_AGENT_PROFILE_HOME/corporate-legal/matters/_archived/<简称>/`，在 `history.md` 中记录关闭日期。
    - `none` → 将 `活跃事项：` 设置为 `无 — 仅实务级上下文`。
 4. 展示变更内容并在写入前与用户确认。
 
 ## 注意事项
 
-- 除非实务级 CLAUDE.md 中 `跨事项上下文` 为 `开`，否则本技能绝不跨事项读取信息。
+- 除非实务级 $LEGAL_AGENT_PROFILE_HOME/corporate-legal/profile.md 中 `跨事项上下文` 为 `开`，否则本技能绝不跨事项读取信息。
 - 归档不是删除——已关闭事项保留可读，用于保留/利益冲突目的。
 - 简称为小写字母加连字符。如简称跨已归档和活跃事项重复使用，已归档版本保留在 `_archived/<简称>/` 下。
 
@@ -39,7 +39,7 @@ argument-hint: "<new | list | switch | close | none> [简称]"
 
 多客户执业者（私人执业——个人执业、小型律所、大型律所）跨大量事项工作。一个事项的上下文不得泄露到另一个。本技能是使这一隔离成立的薄文件管理层。
 
-**默认状态是关闭。** 企业法务用户从不看到此项——他们仅以实务级运行。事项工作区在冷启动时为私人执业用户开启，或通过编辑实务级 CLAUDE.md 中的 `## 事项工作区` 开启。如果 `Enabled` 为 `✗`，本技能不运行；`corporate-matter-workspace` 解释关闭状态并建议对实际需要事项隔离的用户运行 `corporate-cold-start-interview --redo`。
+**默认状态是关闭。** 企业法务用户从不看到此项——他们仅以实务级运行。事项工作区在冷启动时为私人执业用户开启，或通过编辑实务级 $LEGAL_AGENT_PROFILE_HOME/corporate-legal/profile.md 中的 `## 事项工作区` 开启。如果 `Enabled` 为 `✗`，本技能不运行；`corporate-matter-workspace` 解释关闭状态并建议对实际需要事项隔离的用户运行 `corporate-cold-start-interview --redo`。
 
 ## 存储布局
 
@@ -47,7 +47,7 @@ argument-hint: "<new | list | switch | close | none> [简称]"
 
 ```
 $LEGAL_AGENT_PROFILE_HOME/corporate-legal/
-├── CLAUDE.md                       # 实务级实务画像
+├── $LEGAL_AGENT_PROFILE_HOME/corporate-legal/profile.md                       # 实务级实务画像
 └── matters/
     ├── <简称>/
     │   ├── matter.md               # 客户、对方当事人、事项类型、关键事实、覆盖规则
@@ -60,9 +60,9 @@ $LEGAL_AGENT_PROFILE_HOME/corporate-legal/
 
 简称为小写字母加连字符。示例：`acme-msa-2026`、`zenith-renewal`、`vendor-xyz-nda`。
 
-## 活跃事项在实务 CLAUDE.md 中
+## 活跃事项在实务 $LEGAL_AGENT_PROFILE_HOME/corporate-legal/profile.md 中
 
-实务级 CLAUDE.md 中 `## 事项工作区` 下的 `活跃事项：` 行是单一真实来源。切换事项编辑该行。无独立的状态文件。
+实务级 $LEGAL_AGENT_PROFILE_HOME/corporate-legal/profile.md 中 `## 事项工作区` 下的 `活跃事项：` 行是单一真实来源。切换事项编辑该行。无独立的状态文件。
 
 ## 子命令逻辑
 
@@ -94,7 +94,7 @@ $LEGAL_AGENT_PROFILE_HOME/corporate-legal/
 ### `switch <简称>`
 
 1. 确认 `matters/<简称>/matter.md` 存在。如不存在，提供 `corporate-matter-workspace new <简称>`。
-2. 编辑实务级 CLAUDE.md 中的 `活跃事项：` 行为 `活跃事项：<简称>`。
+2. 编辑实务级 $LEGAL_AGENT_PROFILE_HOME/corporate-legal/profile.md 中的 `活跃事项：` 行为 `活跃事项：<简称>`。
 3. 向用户展示 matter.md 摘要以便确认在正确的事项上。
 
 ### `close <简称>`
@@ -106,12 +106,12 @@ $LEGAL_AGENT_PROFILE_HOME/corporate-legal/
 
 ### `none`
 
-将实务级 CLAUDE.md 中的 `活跃事项：` 设置为 `无 — 仅实务级上下文`。与用户确认。
+将实务级 $LEGAL_AGENT_PROFILE_HOME/corporate-legal/profile.md 中的 `活跃事项：` 设置为 `无 — 仅实务级上下文`。与用户确认。
 
 ## `matter.md` 模板
 
 ```markdown
-[工作成果页眉 — 按插件配置 ## 输出规范 — 因角色而异；参见实务级 CLAUDE.md 中的 `## 使用者`]
+[工作成果页眉 — 按插件配置 ## 输出规范 — 因角色而异；参见实务级 $LEGAL_AGENT_PROFILE_HOME/corporate-legal/profile.md 中的 `## 使用者`]
 
 # 事项：[客户] — [简述]
 
@@ -169,7 +169,7 @@ $LEGAL_AGENT_PROFILE_HOME/corporate-legal/
 
 ## 跨事项上下文
 
-实务级 CLAUDE.md 有一个 `跨事项上下文：` 标志。当其为 `关`（默认值）时，在事项 A 中工作的技能**绝不**读取任何其他 B 的 `matters/B/` 中的文件。绝无例外。这是该设置旨在提供的保密性保证。
+实务级 $LEGAL_AGENT_PROFILE_HOME/corporate-legal/profile.md 有一个 `跨事项上下文：` 标志。当其为 `关`（默认值）时，在事项 A 中工作的技能**绝不**读取任何其他 B 的 `matters/B/` 中的文件。绝无例外。这是该设置旨在提供的保密性保证。
 
 当该标志为 `开` 时，技能仅在用户明确要求时才可跨事项文件夹读取文件（例如"比较我们过去五个供应商事项在责任上限上的立场"）。即使标志为 `开`，默认也仅加载活跃事项，除非用户要求跨事项查看。
 

@@ -11,7 +11,7 @@ description: >
 
 ## 事项上下文
 
-**事项上下文。** 检查实务级 CLAUDE.md 中的 `## 事项工作区`。如果 `Enabled` 为 `✗`（企业法务用户的默认值），跳过本段其余内容——技能使用实务级上下文，事项机制不可见。如果已启用且无活跃事项，询问："这是哪个事项？运行 `corporate-matter-workspace switch <事项简称>` 或说 `实务级`。"加载活跃事项的 `matter.md` 获取事项特定上下文和覆盖规则。输出写入事项文件夹 `$LEGAL_AGENT_PROFILE_HOME/corporate-legal/matters/<事项简称>/`。除非 `跨事项上下文` 为 `开`，否则绝不读取其他事项的文件。
+**事项上下文。** 检查实务级 $LEGAL_AGENT_PROFILE_HOME/corporate-legal/profile.md 中的 `## 事项工作区`。如果 `Enabled` 为 `✗`（企业法务用户的默认值），跳过本段其余内容——技能使用实务级上下文，事项机制不可见。如果已启用且无活跃事项，询问："这是哪个事项？运行 `corporate-matter-workspace switch <事项简称>` 或说 `实务级`。"加载活跃事项的 `matter.md` 获取事项特定上下文和覆盖规则。输出写入事项文件夹 `$LEGAL_AGENT_PROFILE_HOME/corporate-legal/matters/<事项简称>/`。除非 `跨事项上下文` 为 `开`，否则绝不读取其他事项的文件。
 
 ---
 
@@ -123,10 +123,10 @@ AI 辅助审查工具擅长一件事：读取500份合同并找到每一条控�
 
 ## 以下一步行动决策树收尾
 
-以 CLAUDE.md `## 输出规范` 中的下一步行动决策树收尾。根据本技能刚产出的内容定制选项——五个默认分支（起草X、上报、补充事实、监控等待、其他）是起点，不是锁定。决策树本身就是产出；律师选择。
+以 $LEGAL_AGENT_PROFILE_HOME/corporate-legal/profile.md `## 输出规范` 中的下一步行动决策树收尾。根据本技能刚产出的内容定制选项——五个默认分支（起草X、上报、补充事实、监控等待、其他）是起点，不是锁定。决策树本身就是产出；律师选择。
 
 ## 本技能不做什么
 
 - 不运行 Luminance 或 Kira——它管理交接和 QA。由人工（或工具自身的界面）运行提取。
 - 不完全用自身判断替代工具的输出——如果 `$LEGAL_AGENT_PROFILE_HOME/corporate-legal/profile.md` 说抽查10%，就检查10%，不是100%。
-- 不决定信任层级——这在 CLAUDE.md 中设定，在冷启动时基于团队对工具的经验确定。
+- 不决定信任层级——这在 $LEGAL_AGENT_PROFILE_HOME/corporate-legal/profile.md 中设定，在冷启动时基于团队对工具的经验确定。

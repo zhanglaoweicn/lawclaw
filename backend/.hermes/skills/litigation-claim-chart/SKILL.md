@@ -13,7 +13,7 @@ argument-hint: '[--patent | --civil] [--infringement | --invalidity-cnipa | --in
    - `--patent` → 专利权利要求图表。须提供专利号和至少一项主张权利要求。子模式：`--infringement`（侵权）、`--invalidity-cnipa`（国知局无效宣告）、`--invalidity-court`（法院诉讼中的无效抗辩）、`--review`（审查）。
    - `--civil` → 民事要件图表。须提供请求权基础（或抗辩事由）和当事方立场。可加 `--arbitration` 标志切换为仲裁程序框架。
    - 无标志 → 询问用户选择哪种。
-5. 民事模式：参考本 skill 目录下 `references/element-templates-cn.md` 中的基准要件列表。在对应前与用户确认适用的裁判规则或法律条款。
+5. 民事模式：参考本 skill 目录下 `references/element-templates.md` 中的基准要件列表。在对应前与用户确认适用的裁判规则或法律条款。
 6. 专利模式：将主张权利要求解析为要素，标注有争议的术语以待权利要求解释，适用已有的权利要求解释意见。
 7. 将要素对应至目标（被控侵权产品/现有技术/证据材料/待审图表）。每格均附引用出处。写入任何以 `=`、`+`、`-`、`@`、制表符或回车开头的单元格值前，先加前缀撇号进行中和处理。
 8. 生成缺口清单（民事模式）或待补证据清单（专利模式）——这是优先输出。
@@ -49,7 +49,7 @@ argument-hint: '[--patent | --civil] [--infringement | --invalidity-cnipa | --in
 
 ## 案件背景
 
-检查实践层级 `CLAUDE.md` 中的 `## 案件工作区`。如 `已启用` 为 `✗`（企业法务用户默认值），跳过本段——各技能使用实践层级背景，案件工作机制不可见。如已启用且无活跃案件，询问："这是哪个案件？运行 `litigation-matter-workspace switch <标识>` 或说 `实践层级`。"加载活跃案件的 `matter.md`——尤其是案件理论、诉讼文书/起诉状（用于实际主张的要件）、管辖法院、已有的权利要求解释意见或约定解释（专利模式），以及案件阶段。将输出写入案件文件夹 `$LEGAL_AGENT_PROFILE_HOME/litigation-legal/matters/<案件标识>/claim-charts/`。除非 `跨案件背景` 为 `开启`，否则不得读取其他案件的文件。
+检查实践层级 实务画像 `$LEGAL_AGENT_PROFILE_HOME/litigation-legal/profile.md` 中的 `## 案件工作区`。如 `已启用` 为 `✗`（企业法务用户默认值），跳过本段——各技能使用实践层级背景，案件工作机制不可见。如已启用且无活跃案件，询问："这是哪个案件？运行 `litigation-matter-workspace switch <标识>` 或说 `实践层级`。"加载活跃案件的 `matter.md`——尤其是案件理论、诉讼文书/起诉状（用于实际主张的要件）、管辖法院、已有的权利要求解释意见或约定解释（专利模式），以及案件阶段。将输出写入案件文件夹 `$LEGAL_AGENT_PROFILE_HOME/litigation-legal/matters/<案件标识>/claim-charts/`。除非 `跨案件背景` 为 `开启`，否则不得读取其他案件的文件。
 
 ---
 
@@ -60,7 +60,7 @@ argument-hint: '[--patent | --civil] [--infringement | --invalidity-cnipa | --in
 - 民事模式：起诉状或反诉状（用于实际主张的诉请）、答辩状（用于实际主张的抗辩事由）、相关裁判规则来源，以及证据材料（庭审笔录、陈述书、已提交文件、专家报告）
 - 专利模式：专利文本、主张权利要求、说明书、申请历史（如可获取）、被控侵权产品材料或现有技术文献、已有权利要求解释意见或约定解释
 
-如 `CLAUDE.md` 含 `[PLACEHOLDER]` 标记，显示以下提示：
+如 实务画像 `$LEGAL_AGENT_PROFILE_HOME/litigation-legal/profile.md` 含 `[PLACEHOLDER]` 标记，显示以下提示：
 
 > 我注意到您尚未配置实践档案——这是我将风险校准、系统环境和本所风格定制到您具体实践的方式。
 >
@@ -198,7 +198,7 @@ argument-hint: '[--patent | --civil] [--infringement | --invalidity-cnipa | --in
 
 ### 第二步：加载要件
 
-三条路径：(a) 模板库（`references/element-templates-cn.md`）；(b) 用户自定义；(c) 抗辩事由。
+三条路径：(a) 模板库（`references/element-templates.md`）；(b) 用户自定义；(c) 抗辩事由。
 
 **管辖特定表述——主动呈现，无需询问：**
 
@@ -534,7 +534,7 @@ graph TD
 
 ## 以下一步决策树结束输出
 
-依 `CLAUDE.md` `## 输出` 中的下一步决策树结束输出，定制为本次实际生成的内容。
+依 实务画像 `$LEGAL_AGENT_PROFILE_HOME/litigation-legal/profile.md` `## 输出` 中的下一步决策树结束输出，定制为本次实际生成的内容。
 
 ## 本工具不做什么
 

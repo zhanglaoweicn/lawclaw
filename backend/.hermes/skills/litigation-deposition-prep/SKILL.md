@@ -4,7 +4,7 @@ description: 为中国民事诉讼庭审准备证人/当事人发问提纲——
 argument-hint: "[证人/当事人姓名]"
 ---
 
-# /deposition-prep 
+# 庭审发问提纲（中国民事诉讼）
 
 1.  **加载上下文** `$LEGAL_AGENT_PROFILE_HOME/litigation-legal/profile.md` → 案件核心事实、我方主张、对方主张。
 2.  **执行工作流**：参考下方流程，基于中国民事诉讼证据规则进行构建。

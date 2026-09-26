@@ -8,6 +8,11 @@ description: >
 user-invocable: false
 ---
 
+> ⚠️ **本技能尚未本地化，LawClaw 默认不启用。**
+> 正文为美国法实务（联邦/州劳动法程序、EEOC/DFEH、NLRA 等），在中国法下直接使用会给出错误结论。
+> 若需要「内部调查」能力，应基于《劳动合同法》《劳动法》与用人单位规章制度重新编写，
+> 而不是启用本文件。以下原文保留仅作结构参考。
+
 # International Expansion Skill
 
 ## Matter context
@@ -38,12 +43,12 @@ on a stored reference table.
 
 ## Load context
 
-Read `./CLAUDE.md` → jurisdictional footprint, escalation table, any existing
+Read `$LEGAL_AGENT_PROFILE_HOME/employment-legal/profile.md` → jurisdictional footprint, escalation table, any existing
 expansion notes.
 
 ## Output header
 
-Prepend the work-product header from `./CLAUDE.md` → `## Outputs` (it differs by user role — see `## Who's using this`).
+Prepend the work-product header from `$LEGAL_AGENT_PROFILE_HOME/employment-legal/profile.md` → `## Outputs` (it differs by user role — see `## Who's using this`).
 
 ## Workflow
 

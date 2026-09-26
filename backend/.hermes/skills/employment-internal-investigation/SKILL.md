@@ -10,6 +10,11 @@ description: >
 user-invocable: false
 ---
 
+> ⚠️ **本技能尚未本地化，LawClaw 默认不启用。**
+> 正文为美国法实务（联邦/州劳动法程序、EEOC/DFEH、NLRA 等），在中国法下直接使用会给出错误结论。
+> 若需要「内部调查」能力，应基于《劳动合同法》《劳动法》与用人单位规章制度重新编写，
+> 而不是启用本文件。以下原文保留仅作结构参考。
+
 # Internal Investigation Skill
 
 ## Matter context
@@ -20,7 +25,7 @@ user-invocable: false
 
 ## Output header
 
-Prepend the work-product header from `./CLAUDE.md` → `## Outputs` (it differs by user role — see `## Who's using this`). Every file, log, memo, and summary produced by this skill opens with that header.
+Prepend the work-product header from `$LEGAL_AGENT_PROFILE_HOME/employment-legal/profile.md` → `## Outputs` (it differs by user role — see `## Who's using this`). Every file, log, memo, and summary produced by this skill opens with that header.
 
 > **Distribution discipline.** Every file this skill creates — log entries, memo drafts, audience summaries, document notes — inherits the privilege and confidentiality status of the underlying investigation. Distribution beyond the privilege circle (forwarding to non-attorneys outside the investigation team, cc'ing HR without scoping, handing to the business side) can waive privilege over the entire investigation. Store these files where privileged materials live, label per the work-product header, and make every distribution decision deliberately.
 
@@ -61,7 +66,7 @@ marking does and does not do.
 
 ## Load context
 
-Read `./CLAUDE.md` → escalation table, any investigation protocols noted.
+Read `$LEGAL_AGENT_PROFILE_HOME/employment-legal/profile.md` → escalation table, any investigation protocols noted.
 
 ---
 
@@ -729,7 +734,7 @@ support?
 
 ## Consequential-action gate (respond to a demand or complaint)
 
-**Before producing a summary, memo, or content intended for an external response (EEOC/DFEH/state agency charge response, plaintiff's-counsel demand letter response, regulator response, or any formal complaint reply):** Read `## Who's using this` in `./CLAUDE.md`. If the Role is **Non-lawyer**:
+**Before producing a summary, memo, or content intended for an external response (EEOC/DFEH/state agency charge response, plaintiff's-counsel demand letter response, regulator response, or any formal complaint reply):** Read `## Who's using this` in `$LEGAL_AGENT_PROFILE_HOME/employment-legal/profile.md`. If the Role is **Non-lawyer**:
 
 > Responding to a demand, charge, or complaint has legal consequences — positions taken here are admissions in later proceedings, waivers of defenses can be inadvertent, and privilege over the underlying investigation can be lost. Have you reviewed this response with an attorney? If yes, proceed. If no, here's a brief to bring to them:
 >

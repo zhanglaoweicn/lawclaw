@@ -157,7 +157,7 @@ https://open.chineselaw.com/，支持邮箱 yuandianzonghe@thunisoft.com）。
 按 profile 中角色 + 法域决定：
 
 - 律师 + 美国法上下文：`PRIVILEGED & CONFIDENTIAL — ATTORNEY WORK PRODUCT — PREPARED AT THE DIRECTION OF COUNSEL`（**本 skill 是中国法 cluster，不适用**）
-- 律师 + 中国法：`保密 / 内部法律分析 — 仅供法务团队使用 — 不构成外发法律意见`
+- 律师 + 中国法：`保密 / 内部法律分析 — 不构成外发法律意见`
 - 非律师：`研究笔记 / 内部记录 — 不构成法律意见 — 请律师复核后再依赖`
 
 外发给业务方 / 客户的版本去工作成果头。

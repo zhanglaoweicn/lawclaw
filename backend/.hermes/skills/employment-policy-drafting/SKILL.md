@@ -9,7 +9,7 @@ argument-hint: "[制度主题——如'远程办公'、'考勤管理'、'绩效�
 
 # /policy-drafting
 
-1. 加载 `./CLAUDE.md` → 管辖范围、规章制度位置。
+1. 加载 `$LEGAL_AGENT_PROFILE_HOME/employment-legal/profile.md` → 管辖范围、规章制度位置。
 2. 使用以下工作流。
 3. 起草核心制度。检查管辖范围中每个省/直辖市是否需要差异化版本。
 4. 输出：核心制度 + 省级补充条款。标记法律正在变动的领域。
@@ -28,7 +28,7 @@ argument-hint: "[制度主题——如'远程办公'、'考勤管理'、'绩效�
 
 ## 加载上下文
 
-`./CLAUDE.md` → 管辖范围、规章制度位置和格式。
+`$LEGAL_AGENT_PROFILE_HOME/employment-legal/profile.md` → 管辖范围、规章制度位置和格式。
 
 ## 工作流
 

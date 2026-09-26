@@ -16,7 +16,7 @@ argument-hint: "<--send | --receive> [上下文、对方当事人或收函路径
 
 ## 指令
 
-1. **读取实践档案。** 加载 `./CLAUDE.md`。如含占位符，停止并提示运行 `/ip-legal:cold-start-interview`。
+1. **读取实践档案。** 加载 `$LEGAL_AGENT_PROFILE_HOME/ip-legal/profile.md`。如含占位符，停止并提示运行 `「知识产权插件初始化访谈」`。
 2. **检查事项工作区。**
 3. **根据参数分发：** `--send` 运行发送模式。`--receive` 运行接收模式。无参数时询问一次。
 4. **尊重关口。** 发送模式中，响亮关口在草稿落盘前运行。不要跳过。

@@ -10,7 +10,7 @@ argument-hint: "[系统名称或AI用例描述]"
 
 # /aia-generation
 
-1. 读取 `./CLAUDE.md` → 监管注册表（适用法规、阈值、义务）、AI系统清单、科技伦理审查配置。
+1. 读取 `$LEGAL_AGENT_PROFILE_HOME/ai-governance-legal/profile.md` → 监管注册表（适用法规、阈值、义务）、AI系统清单、科技伦理审查配置。
 2. 运行以下工作流。
 3. 判定走快速轨还是全面轨。提取系统描述 → 确定监管角色和风险等级 → 生成评估。
 4. 输出：定级 + 评估文件，包含具体行动项、负责人和截止日期。
@@ -45,7 +45,7 @@ argument-hint: "[系统名称或AI用例描述]"
 
 ## 加载当前状态
 
-读取 `./CLAUDE.md`：
+读取 `$LEGAL_AGENT_PROFILE_HOME/ai-governance-legal/profile.md`：
 - `## AI系统清单` — 系统中每个AI系统的角色和等级
 - `## 监管注册表` — 适用的法规及阈值
 - `## 科技伦理审查配置` — 伦理审查委员会设置和审查触发条件

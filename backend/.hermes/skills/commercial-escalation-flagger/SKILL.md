@@ -40,7 +40,7 @@ commercial-escalation-flagger
 
 ## 事项上下文
 
-**事项上下文。** 检查业务领域级 CLAUDE.md 中的 `## 事项工作区`。如果 `Enabled` 为 `✗`（法务用户的默认值），跳过本段其余内容——技能使用业务领域级上下文，事项机制不可见。如果已启用且没有活动事项，询问："这是哪个事项的？运行 `commercial-matter-workspace switch <slug>` 或说 `practice-level`。"加载活动事项的 `matter.md` 获取事项特定上下文和覆盖设置。将输出写入事项文件夹。除非 `跨事项上下文` 为 `on`，否则绝不读取其他事项的文件。
+**事项上下文。** 检查业务领域级 $LEGAL_AGENT_PROFILE_HOME/commercial-legal/profile.md 中的 `## 事项工作区`。如果 `Enabled` 为 `✗`（法务用户的默认值），跳过本段其余内容——技能使用业务领域级上下文，事项机制不可见。如果已启用且没有活动事项，询问："这是哪个事项的？运行 `commercial-matter-workspace switch <slug>` 或说 `practice-level`。"加载活动事项的 `matter.md` 获取事项特定上下文和覆盖设置。将输出写入事项文件夹。除非 `跨事项上下文` 为 `on`，否则绝不读取其他事项的文件。
 
 ---
 

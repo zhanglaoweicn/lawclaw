@@ -19,9 +19,9 @@ argument-hint: "[无需参数——从待处理建议文件工作]"
 
 3. **逐一呈现建议。** 对每项建议，展示完整建议块并提供四个选项：接受、拒绝、编辑、延期。
 
-4. **对于接受或编辑：** 在写入前展示对 CLAUDE.md 的确切差异。仅在律师明确确认后应用。
+4. **对于接受或编辑：** 在写入前展示对 $LEGAL_AGENT_PROFILE_HOME/commercial-legal/profile.md 的确切差异。仅在律师明确确认后应用。
 
-5. **对于拒绝或延期：** 记录决定。不修改 CLAUDE.md。
+5. **对于拒绝或延期：** 记录决定。不修改 $LEGAL_AGENT_PROFILE_HOME/commercial-legal/profile.md。
 
 6. **全部建议处理完毕后：** 展示变更摘要，然后归档建议文件。
 

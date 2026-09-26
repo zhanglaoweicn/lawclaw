@@ -10,14 +10,14 @@ argument-hint: "[系统名称或'--full'进行全量审查]"
 
 # /ai-inventory
 
-1. 读取 `./CLAUDE.md` → 既有AI系统清单（如有）、监管注册表。
+1. 读取 `$LEGAL_AGENT_PROFILE_HOME/ai-governance-legal/profile.md` → 既有AI系统清单（如有）、监管注册表。
 2. 运行以下工作流。
 3. 对每个系统：描述功能 → 判定提供者/使用者角色 → 分配风险等级 → 映射监管义务。
 4. 输出系统级条目 + 汇总表。
 
 ```
-/ai-governance-legal:ai-inventory "智能客服系统 v3"
-/ai-governance-legal:ai-inventory --full
+「AI使用清单盘点」 "智能客服系统 v3"
+「AI使用清单盘点」 --full
 ```
 
 ---
@@ -30,7 +30,7 @@ argument-hint: "[系统名称或'--full'进行全量审查]"
 
 ## 加载当前状态
 
-读取 `./CLAUDE.md`：
+读取 `$LEGAL_AGENT_PROFILE_HOME/ai-governance-legal/profile.md`：
 - `## AI系统清单` — 既有清单（如有）
 - `## 监管注册表` — 适用法规及义务
 - `## 红线` — 禁止的用例类别

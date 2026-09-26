@@ -3,7 +3,7 @@ name: litigation-cold-start-interview
 description: >
   诉讼插件首次配置——按角色分流（法务、律所律师、独立执业）、
   按立场分流（原告、被告、两者皆有），捕获风险校准、执业背景和文书风格，
-  写入业务规范 CLAUDE.md。在全新安装时、用户想设置或重做业务规范时、
+  写入业务规范 $LEGAL_AGENT_PROFILE_HOME/litigation-legal/profile.md。在全新安装时、用户想设置或重做业务规范时、
   或重新检查可用集成时使用。
 argument-hint: "[--redo | --check-integrations]"
 ---

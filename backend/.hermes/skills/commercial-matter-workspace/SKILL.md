@@ -32,7 +32,7 @@ argument-hint: "<new | list | switch | close | none> [简称]"
 
 ## 说明
 
-- 除非业务领域级 CLAUDE.md 中 `跨事项上下文` 为 `on`，技能绝不跨事项读取文件。
+- 除非业务领域级 $LEGAL_AGENT_PROFILE_HOME/commercial-legal/profile.md 中 `跨事项上下文` 为 `on`，技能绝不跨事项读取文件。
 - 归档不是删除——已关闭的事项保持可读状态以供保留/利益冲突目的。
 - 简称使用小写加连字符。示例：`acme-msa-2026`、`zenith-renewal`、`vendor-xyz-nda`。如简称在已归档和当前事项中被重用，已归档的保留在 `_archived/<slug>/` 下。
 
@@ -48,7 +48,7 @@ argument-hint: "<new | list | switch | close | none> [简称]"
 
 ```
 $LEGAL_AGENT_PROFILE_HOME/commercial-legal/
-├── CLAUDE.md                       # 业务领域级审查指引
+├── $LEGAL_AGENT_PROFILE_HOME/commercial-legal/profile.md                       # 业务领域级审查指引
 └── matters/
     ├── <slug>/
     │   ├── matter.md               # 客户、对方当事人、事项类型、关键事实、覆盖规则
@@ -59,9 +59,9 @@ $LEGAL_AGENT_PROFILE_HOME/commercial-legal/
         └── <slug>/                 # 已关闭的事项——可读但非当前
 ```
 
-## 当前事项存于业务领域 CLAUDE.md
+## 当前事项存于业务领域 $LEGAL_AGENT_PROFILE_HOME/commercial-legal/profile.md
 
-业务领域级 CLAUDE.md 中 `## 事项工作区` 下的 `Active matter:` 行是唯一真实来源。切换事项编辑该行。无独立状态文件。
+业务领域级 $LEGAL_AGENT_PROFILE_HOME/commercial-legal/profile.md 中 `## 事项工作区` 下的 `Active matter:` 行是唯一真实来源。切换事项编辑该行。无独立状态文件。
 
 ## 子命令逻辑
 
@@ -93,7 +93,7 @@ $LEGAL_AGENT_PROFILE_HOME/commercial-legal/
 ### `switch <slug>`
 
 1. 确认 `matters/<slug>/matter.md` 存在。如不存在，提示 `commercial-matter-workspace new <slug>`。
-2. 将业务领域级 CLAUDE.md 中的 `Active matter:` 行更新为 `Active matter: <slug>`。
+2. 将业务领域级 $LEGAL_AGENT_PROFILE_HOME/commercial-legal/profile.md 中的 `Active matter:` 行更新为 `Active matter: <slug>`。
 3. 向用户展示 matter.md 摘要，供其确认切换至正确的事项。
 
 ### `close <slug>`
@@ -105,7 +105,7 @@ $LEGAL_AGENT_PROFILE_HOME/commercial-legal/
 
 ### `none`
 
-将业务领域级 CLAUDE.md 中的 `Active matter:` 设为 `none — 仅业务领域级上下文`。与用户确认。
+将业务领域级 $LEGAL_AGENT_PROFILE_HOME/commercial-legal/profile.md 中的 `Active matter:` 设为 `none — 仅业务领域级上下文`。与用户确认。
 
 ## matter.md 模板
 
@@ -168,7 +168,7 @@ $LEGAL_AGENT_PROFILE_HOME/commercial-legal/
 
 ## 跨事项上下文
 
-业务领域级 CLAUDE.md 有一个 `跨事项上下文:` 标记。当其为 `off`（默认）时，在事项A中工作的技能**绝不读取** `matters/B/` 中任何其他 `B` 的文件。这是该设置存在所提供的保密保证。
+业务领域级 $LEGAL_AGENT_PROFILE_HOME/commercial-legal/profile.md 有一个 `跨事项上下文:` 标记。当其为 `off`（默认）时，在事项A中工作的技能**绝不读取** `matters/B/` 中任何其他 `B` 的文件。这是该设置存在所提供的保密保证。
 
 当其为 `on` 时，技能仅在用户明确要求时才跨事项读取文件（如"比较过去五份供应商事项中我方在责任上限的立场"）。即便为 `on`，默认仍仅加载当前事项，除非用户要求跨事项视图。
 

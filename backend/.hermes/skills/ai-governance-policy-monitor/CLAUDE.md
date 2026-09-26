@@ -1,27 +1,25 @@
 <!--
-CONFIGURATION LOCATION
+配置与画像位置（LawClaw 桌面版）
 
-User-specific configuration for this plugin lives at a version-independent path that survives plugin updates:
+本插件的实务画像（律师个人／团队的执业设定、审查阈值、风险口径、输出格式）保存在：
 
-  ~/.claude/plugins/config/claude-for-legal/ai-governance-legal/CLAUDE.md
+  $LEGAL_AGENT_PROFILE_HOME/ai-governance-legal/profile.md
 
-Rules for every skill, command, and agent in this plugin:
-1. READ configuration from that path. Not from this file.
-2. If that file does not exist or still contains [PLACEHOLDER] markers, STOP before doing substantive work. Say: "This plugin needs setup before it can give you useful output. Run /ai-governance-legal:cold-start-interview — it takes about 10-15 minutes and every command in this plugin depends on it. Without it, outputs will be generic and may not match how your practice actually works." Do NOT proceed with placeholder or default configuration. The only skills that run without setup are /ai-governance-legal:cold-start-interview itself and any --check-integrations flag.
-3. Setup and cold-start-interview WRITE to that path, creating parent directories as needed.
-4. On first run after a plugin update, if a populated CLAUDE.md exists at the old cache path
-   (~/.claude/plugins/cache/claude-for-legal/ai-governance-legal/<version>/CLAUDE.md for any version)
-   but not at the config path, copy it forward to the config path before proceeding.
-5. This file (the one you are reading) is the TEMPLATE. It ships with the plugin and shows the
-   structure the config should have. It is replaced on every plugin update. Never write user data here.
-
-**Shared company profile.** Company-level facts (who you are, what you do, where you operate, your risk posture, key people) live in `~/.claude/plugins/config/claude-for-legal/company-profile.md` — one level above this file, shared by all 12 plugins. Read it before this plugin's practice profile. If it doesn't exist, this plugin's setup will create it.
+规则：
+1. 从该路径读取配置；不要从本文件读取用户数据。
+2. 若该文件不存在或仍含 [PLACEHOLDER]：**照常工作，不要拒绝、不要要求用户先去配置**。
+   按中国法与通用最佳实践给出完整输出，并在结尾用一句话提示律师：
+   跑「AI治理插件初始化访谈」技能卡（技能页搜索即可）可让本技能的输出贴合其执业口径。
+3. 冷启动访谈与各项设置写入该路径，必要时创建父目录。
+4. 本文件是**模板**，随技能分发、展示配置应有的结构；请勿把用户数据写在这里。
+5. 跨插件共享的公司画像在 `$LEGAL_AGENT_PROFILE_HOME/company-profile.md`
+   （位于 ai-governance-legal 目录的上层），读取本插件画像前先读它；不存在时由冷启动访谈创建。
 -->
 
 # AI 治理实务画像
 
 *由冷启动访谈编写。在此之前，这是模板——如看到
-`[PLACEHOLDER]`，运行 `/ai-governance-legal:cold-start-interview`。*
+`[PLACEHOLDER]`，运行 `「AI治理插件初始化访谈」`。*
 
 ---
 
@@ -58,7 +56,7 @@ Rules for every skill, command, and agent in this plugin:
 | 定时任务 | [✓ / ✗] | 政策监测扫描仅在按需模式下运行 |
 | 飞书/Slack | [✓ / ✗] | 升级和通知通过邮件发送 |
 
-*重新检查：`/ai-governance-legal:cold-start-interview --check-integrations`*
+*重新检查：`「AI治理插件初始化访谈」 --check-integrations`*
 
 ---
 
@@ -89,7 +87,7 @@ Rules for every skill, command, and agent in this plugin:
 
 ## AI 系统清单
 
-**清单文件：** `~/.claude/plugins/config/claude-for-legal/ai-governance-legal/ai-systems.yaml`
+**清单文件：** `$LEGAL_AGENT_PROFILE_HOME/ai-governance-legal/ai-systems.yaml`
 
 在中国 AI 监管框架下，**角色和风险层级按 AI 系统评估，不按公司。** 一个组织可以是系统A的提供者、系统B的部署者——每个组合触发不同的义务集合。本清单每条记录对应一个系统。
 
@@ -104,7 +102,7 @@ Rules for every skill, command, and agent in this plugin:
 
 **清单不自动推导义务。** 当用户问"系统X我的义务是什么？"时，答案在对话中生成，标注 `[verify]`。这是有意为之——监管映射复杂，制度在持续完善中，硬编码的角色 × 层级 → 义务表格正是那种出现在董事会备忘录中的自信但错误的产物。清单是律师的登记册；律师拥有义务分析。
 
-管理清单使用 `/ai-governance-legal:ai-inventory` —— `list | add | edit <id> | classify <id> | show <id>`。
+管理清单使用 `「AI使用清单盘点」` —— `list | add | edit <id> | classify <id> | show <id>`。
 
 ---
 
@@ -273,7 +271,7 @@ Rules for every skill, command, and agent in this plugin:
 
 **文件访问失败。** 不保持沉默。
 
-**验证日志。** 记录到 `~/.claude/plugins/config/claude-for-legal/ai-governance-legal/verification-log.md`。
+**验证日志。** 记录到 `$LEGAL_AGENT_PROFILE_HOME/ai-governance-legal/verification-log.md`。
 
 ---
 
@@ -354,4 +352,4 @@ AI 监管领域变化极快——生成式人工智能管理办法、科技伦�
 
 ---
 
-*重新运行：`/ai-governance-legal:cold-start-interview --redo`*
+*重新运行：`「AI治理插件初始化访谈」 --redo`*

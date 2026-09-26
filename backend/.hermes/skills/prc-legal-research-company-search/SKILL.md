@@ -42,7 +42,7 @@ https://open.chineselaw.com/，支持邮箱 yuandianzonghe@thunisoft.com）。
 
 **已知企业名称（全称或关键词）**：
 
-调用 `yuandian_rh_enterpriseSearch`，参数 `name="企业名称关键词"`。
+调用 `yuandian_search_companies`，参数 `name="企业名称关键词"`。
 
 若返回多家企业，**列出候选列表，请用户确认目标企业后再继续**，不擅自选择。这是消歧门，避免误查同名 / 类似名企业。
 
@@ -52,36 +52,36 @@ https://open.chineselaw.com/，支持邮箱 yuandianzonghe@thunisoft.com）。
 
 | 查询类型 | MCP 工具 | 说明 |
 |----------|---------|------|
-| **基本工商信息** | `yuandian_rh_enterpriseBaseInfo` | 注册资本、法人、地址、股东、核心成员等 |
-| **快速风险总览** | `yuandian_rh_enterpriseAggregationSummary` | 18 类信息统计概览（**推荐首选**） |
-| **涉诉统计** | `yuandian_rh_enterpriseWritAgg` | 涉诉案件数量分布 |
-| **涉诉文书列表** | `yuandian_rh_enterpriseWritList` | 裁判文书列表（分页，每页约 30 条） |
-| **开庭公告** | `yuandian_rh_enterpriseCourtSessionNotice` | 即将 / 近期开庭信息 |
-| **法院公告** | `yuandian_rh_enterpriseCourtNotice` | 法院发布的公告 |
-| **失信被执行人** | `yuandian_rh_enterpriseExecutions` | 老赖名单记录 |
-| **被执行人** | `yuandian_rh_enterpriseExecutedPerson` | 被执行人信息 |
-| **严重违法** | `yuandian_rh_enterpriseSeriousIllegal` | 严重违法记录 |
-| **经营异常** | `yuandian_rh_enterpriseAbnormalOperation` | 经营异常情形 |
-| **欠税公告** | `yuandian_rh_enterpriseCorporateTax` | 欠税公告记录 |
-| **股权冻结** | `yuandian_rh_enterpriseFrozenEquity` | 股权冻结情况 |
-| **股权出质** | `yuandian_rh_enterprisePledge` | 股权出质情况 |
-| **对外投资** | `yuandian_rh_enterpriseOutInvest` | 投资标的企业 |
-| **对外担保** | `yuandian_rh_enterpriseGuaranty` | 担保承诺信息 |
-| **商标信息** | `yuandian_rh_enterpriseBrand` | 商标注册情况 |
-| **专利信息** | `yuandian_rh_enterprisePatent` | 专利列表 |
-| **软件著作权** | `yuandian_rh_enterpriseSoftRight` | 软著列表 |
-| **作品著作权** | `yuandian_rh_enterpriseWorksRight` | 版权列表 |
-| **网站备案** | `yuandian_rh_enterpriseIcp` | ICP 备案信息 |
-| **变更记录** | `yuandian_rh_enterpriseChangeInfo` | 工商变更历史 |
-| **行政处罚** | `yuandian_rh_enterprisePunishment` | 行政处罚记录 |
+| **基本工商信息** | `yuandian_get_company_basic_profile` | 注册资本、法人、地址、股东、核心成员等 |
+| **快速风险总览** | `yuandian_get_company_statistics_overview` | 18 类信息统计概览（**推荐首选**） |
+| **涉诉统计** | `yuandian_get_company_litigation_statistics` | 涉诉案件数量分布 |
+| **涉诉文书列表** | `yuandian_list_company_litigation_document_summaries` | 裁判文书列表（分页，每页约 30 条） |
+| **开庭公告** | `yuandian_list_company_court_hearing_notices` | 即将 / 近期开庭信息 |
+| **法院公告** | `yuandian_list_company_court_announcements` | 法院发布的公告 |
+| **失信被执行人** | `yuandian_list_company_judgment_defaulter_records` | 老赖名单记录 |
+| **被执行人** | `yuandian_list_company_judicial_enforcement_records` | 被执行人信息 |
+| **严重违法** | `yuandian_list_company_serious_violations` | 严重违法记录 |
+| **经营异常** | `yuandian_list_company_abnormal_operations` | 经营异常情形 |
+| **欠税公告** | `yuandian_list_company_tax_arrears` | 欠税公告记录 |
+| **股权冻结** | `yuandian_list_company_equity_freezes` | 股权冻结情况 |
+| **股权出质** | `yuandian_list_company_equity_pledges` | 股权出质情况 |
+| **对外投资** | `yuandian_list_company_external_investments` | 投资标的企业 |
+| **对外担保** | `yuandian_list_company_external_guarantees` | 担保承诺信息 |
+| **商标信息** | `yuandian_list_company_trademarks` | 商标注册情况 |
+| **专利信息** | `yuandian_list_company_patents` | 专利列表 |
+| **软件著作权** | `yuandian_list_company_software_copyrights` | 软著列表 |
+| **作品著作权** | `yuandian_list_company_work_copyrights` | 版权列表 |
+| **网站备案** | `yuandian_list_company_website_filings` | ICP 备案信息 |
+| **变更记录** | `yuandian_list_company_registration_changes` | 工商变更历史 |
+| **行政处罚** | `yuandian_list_company_administrative_penalties` | 行政处罚记录 |
 
 所有工具均接受 `id`（企业 ID）或 `tyshxydm`（统一社会信用代码）作为主要参数；列表类工具额外支持 `pageNo`（页码，默认 1）。
 
 ### 查询策略
 
 **用户未明确指定查询类型时**：
-1. 先调用 `yuandian_rh_enterpriseBaseInfo` 获取基本工商信息。
-2. 再调用 `yuandian_rh_enterpriseAggregationSummary` 获取风险总览。
+1. 先调用 `yuandian_get_company_basic_profile` 获取基本工商信息。
+2. 再调用 `yuandian_get_company_statistics_overview` 获取风险总览。
 3. 根据总览中有数量的类别，提示用户可深入查询。
 
 **用户明确指定查询类型时**：直接调用对应 MCP 工具。
@@ -90,12 +90,12 @@ https://open.chineselaw.com/，支持邮箱 yuandianzonghe@thunisoft.com）。
 
 | 用户意图 | 应调用工具 |
 |----------|-----------|
-| "有多少案件"、"涉诉概览"、"风险摸排" | `yuandian_rh_enterpriseAggregationSummary`（汇总统计） |
-| "列出案件"、"涉诉文书列表"、"看案件明细"、"具体案号" | `yuandian_rh_enterpriseWritList`（分页文书列表） |
-| "股权冻结情况"、"冻结明细"、"每条冻结记录"、"冻结金额" | `yuandian_rh_enterpriseFrozenEquity`（冻结明细） |
-| "股权出质明细"、"出质记录" | `yuandian_rh_enterprisePledge`（出质明细） |
+| "有多少案件"、"涉诉概览"、"风险摸排" | `yuandian_get_company_statistics_overview`（汇总统计） |
+| "列出案件"、"涉诉文书列表"、"看案件明细"、"具体案号" | `yuandian_list_company_litigation_document_summaries`（分页文书列表） |
+| "股权冻结情况"、"冻结明细"、"每条冻结记录"、"冻结金额" | `yuandian_list_company_equity_freezes`（冻结明细） |
+| "股权出质明细"、"出质记录" | `yuandian_list_company_equity_pledges`（出质明细） |
 
-`yuandian_rh_enterpriseAggregationSummary` 只返回各类数量统计，**不包含 per-record 字段**（案号、案由、金额等）。需要记录级别数据时，必须调用对应的专项接口——**不允许**用 aggregation 接口的统计数充当明细。
+`yuandian_get_company_statistics_overview` 只返回各类数量统计，**不包含 per-record 字段**（案号、案由、金额等）。需要记录级别数据时，必须调用对应的专项接口——**不允许**用 aggregation 接口的统计数充当明细。
 
 ## 第三步：输出结果
 
@@ -170,7 +170,7 @@ https://open.chineselaw.com/，支持邮箱 yuandianzonghe@thunisoft.com）。
 
 按 profile 中角色 + 法域决定：
 
-- 律师 + 中国法：`保密 / 内部法律分析 — 仅供法务团队使用 — 不构成外发法律意见`
+- 律师 + 中国法：`保密 / 内部法律分析 — 不构成外发法律意见`
 - 非律师：`研究笔记 / 内部记录 — 不构成法律意见 — 请律师复核后再依赖`
 
 外发给业务方 / 客户的版本去工作成果头。

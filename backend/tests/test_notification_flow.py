@@ -83,6 +83,15 @@ DEADLINE_TYPE_LABELS = {
     "custom": "自定义",
 }
 
+# 与 main.py 的 DEADLINE_DEFER_LAW_BASIS 保持一致（民事诉讼期间 ≠ 刑事诉讼期间）
+DEADLINE_DEFER_LAW_BASIS = {
+    "civil": "《民事诉讼法》第85条第3款：期间届满的最后一日是法定休假日的，"
+             "以法定休假日后的第一日为期间届满的日期。",
+    "criminal": "《刑事诉讼法》第105条第4款：期间的最后一日为节假日的，"
+                "以节假日后的第一日为期满日期（在押期间不得因节假日延长）。",
+}
+CRIMINAL_DEADLINE_TYPES = {"appeal-criminal-judgment", "appeal-criminal-ruling"}
+
 
 def calc_deadline(start_date: str, days: int = 0,
                   deadline_type: str = "custom",
@@ -139,7 +148,9 @@ def calc_deadline(start_date: str, days: int = 0,
         "deadline_type": deadline_type,
         "days_remaining": days_remaining,
         "status": "已过期" if days_remaining < 0 else ("紧急" if days_remaining <= 7 else "正常"),
-        "law_basis": "《民法典》第201条：期间届满的最后一日为法定休假日的，以休假日后的第一日为期间届满的日期。",
+        "law_basis": DEADLINE_DEFER_LAW_BASIS[
+            "criminal" if deadline_type in CRIMINAL_DEADLINE_TYPES else "civil"
+        ],
     }
 
 

@@ -69,3 +69,6 @@ backend/tests/lawyer_full_report.json
 
 # 本地过程日志：仅在工作区保留，不进公开仓库
 /AGENTS.md
+
+# video2code 插件本地缓存
+.v2c/

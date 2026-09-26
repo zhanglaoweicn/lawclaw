@@ -384,8 +384,32 @@ fn kill_backend() {
     }
 }
 
+/// 便携/U盘形态：exe 同级存在 `PORTABLE` 标记文件时，把 WebView2 用户数据
+/// （localStorage/IndexedDB——案件台账、会话、配置）重定向到 exe 旁的 `webview-data/`，
+/// 让数据跟随U盘走，而不是落到客户机 %LOCALAPPDATA%\{identifier}（不跟盘、且在他机留痕）。
+/// 机制：WEBVIEW2_USER_DATA_FOLDER 环境变量会覆盖 wry 传给
+/// CreateCoreWebView2EnvironmentWithOptions 的 userDataFolder 参数
+/// （微软文档口径；已用本机 release exe 实证：EBWebView 落在指定目录、AppData 零写入）。
+fn apply_portable_data_dir() {
+    let Ok(exe) = std::env::current_exe() else { return };
+    let Some(dir) = exe.parent() else { return };
+    if !dir.join("PORTABLE").exists() {
+        return;
+    }
+    let data_dir = dir.join("webview-data");
+    let created = std::fs::create_dir_all(&data_dir).is_ok();
+    std::env::set_var("WEBVIEW2_USER_DATA_FOLDER", &data_dir);
+    log_line(&format!(
+        "portable mode: webview data dir = {} (created={})",
+        data_dir.display(),
+        created
+    ));
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // 必须在窗口创建前设置：WebView2 环境在首个 webview 创建时读取该变量
+    apply_portable_data_dir();
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())

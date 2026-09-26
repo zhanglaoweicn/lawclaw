@@ -470,7 +470,54 @@ def step_portable():
             src = ROOT / "src-tauri" / "target" / "release" / dll
         if src.exists():
             shutil.copy2(src, dst / dll)
-    print(f"    ✓ {dst.relative_to(ROOT)}（{_dir_size_mb(dst):.0f} MB）——整目录拷走即可运行")
+    # 便携标记：launcher（lib.rs apply_portable_data_dir）据此把 WebView2 用户数据
+    # （案件台账/会话/设置的 localStorage）重定向到本目录 webview-data/——
+    # 数据跟随U盘走，而不是落在客户机 %LOCALAPPDATA%（不跟盘且在他机留痕）。
+    # 没有这个标记（如安装版），数据仍按常规落 AppData。
+    (dst / "PORTABLE").write_text(
+        "LawClaw 便携/U盘形态标记（勿删）。\n"
+        "存在本文件时，应用把界面数据（案件台账/会话/设置）存到本目录 webview-data/，\n"
+        "后端状态存到 backend/.hermes/——全部跟随本目录移动。\n",
+        encoding="utf-8",
+    )
+    (dst / "README-USB.txt").write_text(_portable_readme(), encoding="utf-8-sig")
+    missing = [f for f in ("LawClaw.exe", "WebView2Loader.dll", "PORTABLE", "backend", "README-USB.txt")
+               if not (dst / f).exists()]
+    if missing:
+        raise SystemExit(f"✗ 便携目录缺关键文件：{missing}")
+    print(f"    ✓ {dst.relative_to(ROOT)}（{_dir_size_mb(dst):.0f} MB）——整目录拷到U盘即可运行"
+          "（含 PORTABLE 标记：界面数据随盘走）")
+
+
+def _portable_readme() -> str:
+    return (
+        "LawClaw 律爪 · U盘便携版使用说明\n"
+        "================================\n"
+        "\n"
+        "【运行】双击本目录下的 LawClaw.exe 即可。目标电脑无需安装任何环境\n"
+        "（不需要 Python/Node；唯一系统组件 WebView2 运行时在 Win10 1803+/Win11 已内置，\n"
+        "极少数老机器缺失时联网装一次即可）。\n"
+        "\n"
+        "【首次启动】\n"
+        "1. 若 Windows 弹出 SmartScreen 提示（exe 未签名），点「更多信息 → 仍要运行」。\n"
+        "2. 等待引擎启动（U盘读写慢，首次启动可能要十几秒到一分钟）。\n"
+        "3. 进入首启向导，填入 LLM API Key（默认端点 https://api.deepseek.com/v1，\n"
+        "   模型 deepseek-flash）。只需填一次：Key 保存在U盘 backend/.env，\n"
+        "   换电脑使用无需重填。法律检索数据源（元典）如需启用，用记事本编辑\n"
+        "   backend/.env 填入 YUANDIAN_API_KEY。\n"
+        "\n"
+        "【数据都在U盘里】（拔盘即走，不在所用电脑 AppData 里留案件数据）\n"
+        "- backend/.hermes/   后端状态（会话/技能/日志/定时任务）\n"
+        "- backend/.env       凭证（含你填写的 Key——U盘请妥善保管，遗失即泄露）\n"
+        "- webview-data/      界面数据（案件台账/日程/文件库等）\n"
+        "- launcher.log       启动排障日志\n"
+        "\n"
+        "【注意】\n"
+        "- 用完请先正常关闭应用窗口，再拔出U盘（保证数据落盘）。\n"
+        "- 建议 exFAT/NTFS 格式U盘（FAT32 也能用，但小文件读写慢，首启更久）。\n"
+        "- 若电脑上已安装 LawClaw 或另一份便携版正在运行，后启动的实例会共用\n"
+        "  已在运行的引擎（9876 端口）——请避免两份同时运行。\n"
+    )
 
 
 def purge_smoke_artifacts():

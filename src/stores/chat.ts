@@ -319,6 +319,17 @@ export const useChatStore = defineStore('chat', () => {
     switchSession(s.id)
   }
 
+  function newSessionWithExpertGroup(group: { id: string; name: string; systemPrompt: string }, matterId?: string) {
+    const s = defaultSession(matterId)
+    s.title = `${group.name}（整团）`
+    s.systemPrompt = group.systemPrompt
+    // group:<gid> 形态：truthy，ChatPanel 的专家 pill / "退出专家模式"据此可达
+    s.expertRoleId = `group:${group.id}`
+    sessions.value.unshift(s)
+    saveSessions(sessions.value)
+    switchSession(s.id)
+  }
+
   function clearExpertRole() {
     const s = activeSession.value
     if (!s) return
@@ -520,8 +531,19 @@ export const useChatStore = defineStore('chat', () => {
 
     let session = activeSession.value
     if (session && session.messageCount === 0) {
-      const title = text.length > 20 ? text.slice(0, 20) + '...' : text
-      renameSession(session.id, title)
+      if (session.expertRoleId) {
+        // 专家会话保留召唤时的标题（角色名/整团名）；统计口径：使用次数按
+        // "实际发出的首条消息"计，召唤而不发言不计数
+        try {
+          const { useExpertStore: useExpertStoreLazy } = await import('./expert')
+          useExpertStoreLazy().recordUsage(session.expertRoleId)
+        } catch {
+          // expert store 未就绪，跳过统计
+        }
+      } else {
+        const title = text.length > 20 ? text.slice(0, 20) + '...' : text
+        renameSession(session.id, title)
+      }
     }
 
     // ── Assistant message ID (placeholder created on first delta) ──
@@ -851,6 +873,7 @@ export const useChatStore = defineStore('chat', () => {
     switchSession,
     newSession,
     newSessionWithExpert,
+    newSessionWithExpertGroup,
     setExpertRole,
     clearExpertRole,
     deleteSession,

@@ -563,14 +563,13 @@ function pickExpert(role: { id: string; name: string; systemPrompt: string; samp
   chatStore.setExpertRole(role)
   // 示例问题直接填入输入框（不自动发送——由用户确认/补充后发出）
   if (role.samplePrompt) inputText.value = role.samplePrompt
-  expertStore.recordUsage(role.id)
+  // 使用统计在 sendMessage 发出首条消息时记录（召唤本身不计数）
   ElMessage.success(`已召唤「${role.name}」`)
 }
 
 function pickExpertFromWelcome(role: any, group: any) {
   chatStore.setExpertRole(role)
   if (role.samplePrompt) inputText.value = role.samplePrompt
-  expertStore.recordUsage(role.id)
   ElMessage.success(`已召唤「${role.name}」`)
 }
 
@@ -590,8 +589,6 @@ function pickCase(id: string) {
 
 function clearExpert() {
   chatStore.clearExpertRole()
-  const s = chatStore.activeSession
-  if (s) { s.systemPrompt = undefined; s.expertRoleId = undefined }
   showExpertPopover.value = false
   ElMessage.success('已退出专家模式')
 }
@@ -682,10 +679,8 @@ const quickReplies = computed(() => {
 })
 
 const currentExpertLabel = computed(() => {
-  const roleId = chatStore.activeSession?.expertRoleId
-  if (!roleId) return '通用助理'
-  const r = expertStore.findRole(roleId)
-  return r ? r.name : '通用助理'
+  const label = expertStore.findExpertLabel(chatStore.activeSession?.expertRoleId)
+  return label || '通用助理'
 })
 
 const currentCaseLabel = computed(() => {

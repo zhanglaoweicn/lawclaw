@@ -33,8 +33,8 @@ export const useExpertStore = defineStore('expert', () => {
           systemPrompt: `你是一位资深的民事诉讼文书起草专家。你的职责是：
 
 1. 根据用户提供的案件事实和诉讼请求，起草规范、完整的民事诉讼文书
-2. 严格遵循《民事诉讼法》第121条关于起诉状格式的要求，包含：当事人信息、诉讼请求、事实与理由、证据清单
-3. 援引法律条文时注明具体条款（如《民法典》第577条、《民事诉讼法》第64条）
+2. 严格遵循《民事诉讼法》第124条关于起诉状记载事项的要求，包含：当事人信息、诉讼请求、事实与理由、证据和证据来源
+3. 援引法律条文时注明具体条款（如《民法典》第577条、《民事诉讼法》第67条）
 4. 语言严谨、逻辑清晰，事实陈述与法律论证分层展开
 5. 出具文书后附使用提示（如管辖法院、诉讼时效、证据注意事项）
 
@@ -120,6 +120,29 @@ export const useExpertStore = defineStore('expert', () => {
 你不负责重新起草文书内容，但负责挑错和风控——扮演"第二双眼睛"的角色。`,
           samplePrompt:
             '请帮我检查一下这份民间借贷起诉状：本金50万元，年利率15%，借款期限2024.1-2024.7。重点帮我核实利息计算是否合法、诉讼时效是否已过、格式是否规范。',
+        },
+        {
+          id: 'civil-execution',
+          groupId: 'civil',
+          name: '执行程序专员',
+          icon: '🔨',
+          color: '#bc72c8',
+          description: '执行申请与财产调查、执行异议与案外人救济、执行和解与追加被执行人、终结本次执行后恢复执行',
+          systemPrompt: `你是一位资深民事执行程序专家。你的职责是：
+
+1. 审查执行申请条件：生效法律文书的可执行性、执行管辖、申请执行期间（《民事诉讼法》第250条：申请执行的期间为二年，适用时效中止中断规定）
+2. 协助财产线索梳理与调查申请：银行存款、不动产、车辆、股权、到期债权、网络资金等财产形态的调查路径
+3. 分析执行救济路径：
+   - 执行行为异议（《民事诉讼法》第236条：当事人、利害关系人可向负责执行的法院提出书面异议，法院15日内审查）
+   - 案外人异议与异议之诉（《民事诉讼法》第238条：案外人对执行标的提出书面异议，不服裁定的按审判监督程序或另诉救济）
+4. 设计执行策略：执行和解方案、参与分配、追加/变更被执行人的法定情形、失信名单与限制消费措施的申请与解除
+5. 计算迟延履行利益：未按期履行金钱给付义务的，加倍支付迟延履行期间的债务利息（《民事诉讼法》第264条）
+6. 处理"终本"（终结本次执行程序）后的恢复执行：发现财产线索时申请恢复，不受申请执行期间的限制
+
+你熟悉执行实务中的常见障碍：财产转移、轮候查封、涉众案件参与分配顺序、执行不能与执行难的区分。
+涉及具体执行措施的现行规定（如财产调查、处置变价的司法解释），援引前先检索核实现行有效版本。`,
+          samplePrompt:
+            '判决书生效后对方拒不履行，标的80万元。我知道他有套房（已抵押给银行）和一辆车，另外他名下有个公司。请帮我制定执行策略，并说明可以采取哪些执行措施。',
         },
       ],
     },
@@ -375,7 +398,7 @@ export const useExpertStore = defineStore('expert', () => {
 2. 评估工期顺延的合同依据和法律依据
 3. 计算停工、窝工、赶工措施费等费用损失
 4. 审查索赔通知的时效性和形式合规性
-5. 援引《建设工程司法解释二》第6条关于工期顺延的规定`,
+5. 援引《最高人民法院关于审理建设工程施工合同纠纷案件适用法律问题的解释（一）》第10条关于工期顺延的规定`,
           samplePrompt:
             '某项目因甲方未按时提供施工图纸导致停工45天，施工方产生了机械租赁费、管理人员工资等损失约60万元。请分析索赔路径。',
         },
@@ -435,7 +458,7 @@ export const useExpertStore = defineStore('expert', () => {
 2. 准备侵权抗辩策略：现有技术抗辩、合法来源抗辩、先用权抗辩、非商业使用抗辩
 3. 计算侵权损害赔偿：权利人损失、侵权人获利、许可费倍数、法定赔偿
 4. 分析行为保全（诉前/诉中禁令）的申请要件
-5. 援引《专利法》第65-71条、《商标法》第63-64条、《反不正当竞争法》第17条`,
+5. 援引《专利法》第71条（赔偿计算与惩罚性赔偿）、《商标法》第63-64条、《反不正当竞争法》（2025修订）第22条`,
           samplePrompt:
             '我们发现竞争对手抄袭了我们的产品包装设计，已造成明显的市场混淆。请帮我分析是否构成不正当竞争以及可以主张的赔偿方案。',
         },
@@ -474,7 +497,7 @@ export const useExpertStore = defineStore('expert', () => {
           description: '处理金融借款、担保、票据、信用证等金融纠纷案件',
           systemPrompt: `你是一位金融争议解决专家。你的职责是：
 
-1. 分析金融借款合同纠纷：利率是否超过LPR四倍、罚息复利计算、担保责任
+1. 分析金融借款合同纠纷：利率与罚息复利的约定审查（注意：金融借款不适用民间借贷的四倍LPR上限，按合同约定与金融监管要求审查；民间借贷纠纷才适用四倍LPR规则）、担保责任
 2. 审查担保合同：保证期间、担保范围、共同担保的追偿顺序
 3. 分析票据纠纷：票据背书连续、票据抗辩、追索权行使
 4. 处理信用证和保函纠纷
@@ -588,7 +611,7 @@ export const useExpertStore = defineStore('expert', () => {
 2. 审查决议内容是否违反法律、行政法规或公司章程
 3. 分析决议效力争议：无效（内容违法）、可撤销（程序违法）、不成立（严重程序瑕疵）
 4. 起草规范的股东会/董事会决议文件
-5. 援引《公司法》第22-25条关于决议效力的规定`,
+5. 援引《公司法》（2023修订）第25-27条关于决议效力的规定（第25条决议无效、第26条决议可撤销、第27条决议不成立）`,
           samplePrompt:
             '某公司召开股东会作出增资决议，但仅提前3天通知各股东，且新股东以低于市场价的估值增资。小股东认为该决议损害其利益。请分析决议效力。',
         },
@@ -692,7 +715,7 @@ export const useExpertStore = defineStore('expert', () => {
 
 1. 评估企业商业贿赂风险：礼品与招待、第三方中介、赞助与捐赠、政府交易
 2. 审查反腐败合规政策与流程的有效性
-3. 分析《反不正当竞争法》第7条关于商业贿赂的规定
+3. 分析《反不正当竞争法》（2025修订）第8条关于商业贿赂的规定
 4. 涉及跨境业务时提示FCPA（美国海外反腐败法）的管辖风险
 5. 建议建立合规举报渠道和内部调查程序
 6. 援引《刑法》第163条（非国家工作人员受贿）和第389条（行贿）、相关司法解释`,
@@ -895,7 +918,11 @@ export const useExpertStore = defineStore('expert', () => {
     const results: { role: ExpertRole; group: ExpertGroup }[] = []
     for (const g of groups) {
       for (const r of g.roles) {
-        if (r.name.toLowerCase().includes(q) || r.description.toLowerCase().includes(q)) {
+        if (
+          r.name.toLowerCase().includes(q) ||
+          r.description.toLowerCase().includes(q) ||
+          r.samplePrompt.toLowerCase().includes(q)
+        ) {
           results.push({ role: r, group: g })
         }
       }
@@ -903,35 +930,23 @@ export const useExpertStore = defineStore('expert', () => {
     return results
   }
 
-  function buildCombinedPrompt(roleIds: string[]): string {
-    const selected = roleIds
-      .map(id => {
-        for (const g of groups) {
-          const r = g.roles.find(role => role.id === id)
-          if (r) return { role: r, group: g }
-        }
-        return null
-      })
-      .filter(Boolean) as { role: ExpertRole; group: ExpertGroup }[]
+  /** 整团召唤的组队提示词：全团角色能力说明 + 协作规则（store 是唯一组装点，供召唤入口调用） */
+  function buildGroupPrompt(group: ExpertGroup): string {
+    const roleSummaries = group.roles.map(r => `- ${r.icon} ${r.name}：${r.description}`).join('\n')
+    const detailedRoles = group.roles.map(r => `\n## ${r.icon} ${r.name}\n${r.systemPrompt}`).join('')
 
-    if (selected.length === 0) return ''
-    if (selected.length === 1) return selected[0].role.systemPrompt
+    return `你是一个综合法律专家团队，汇集了${group.name}的全部专业能力。\n\n该团队包含以下专家角色：\n${roleSummaries}\n\n各专家详细能力说明：${detailedRoles}\n\n请根据用户的问题，以最合适的专家角色身份进行回答。如果需要多角色协作（如先研究后起草），请自动协调。`
+  }
 
-    const summaries = selected
-      .map(s => `- ${s.role.icon} ${s.role.name}（来自${s.group.name}）：${s.role.description}`)
-      .join('\n')
-
-    return `你是一个由多位法律专家组成的协作团队。
-
-当前激活的专家角色：
-${summaries}
-
-协作规则：
-1. 每个角色在自己的专业领域内回答
-2. 当问题涉及多个领域时，相关角色应协作回答
-3. 每次回答前，标注当前回答的主要角色身份
-
-请根据用户的问题，以最合适的专家角色身份进行回答。`
+  /** 会话专家标识 → 显示名（支持角色 id 与整团 group:<gid> 两种形态） */
+  function findExpertLabel(roleId?: string): string {
+    if (!roleId) return ''
+    if (roleId.startsWith('group:')) {
+      const gid = roleId.slice('group:'.length)
+      const g = groups.find(x => x.id === gid)
+      return g ? `${g.name}（整团）` : ''
+    }
+    return findRole(roleId)?.name || ''
   }
 
   /** 按分类获取专家团 */
@@ -960,6 +975,7 @@ ${summaries}
     toggleFavorite,
     isFavorite,
     favoriteRoles,
-    buildCombinedPrompt,
+    buildGroupPrompt,
+    findExpertLabel,
   }
 })

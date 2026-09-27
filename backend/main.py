@@ -69,7 +69,10 @@ DEFAULT_API_KEY = os.getenv("OPENAI_API_KEY", "")
 DEFAULT_MODEL = os.getenv("LAWCLAW_MODEL", "deepseek-flash")
 
 # ── 律师专属法律系统提示词（支持执业画像动态注入） ──
-LAWYER_SYSTEM_PROMPT = """你是 LawClaw 律爪，一位专业的中国法律 AI 助手，服务于独立执业律师。
+# 分层设计：身份层（可被专家 persona 替换）+ 护栏层（GUARDRAIL_PROMPT，任何模式都注入）。
+# 旧版把专家 systemPrompt 整体替换 LAWYER_SYSTEM_PROMPT，导致专家模式丢失
+# "法条引用前验证有效性"、保密义务、"不构成正式法律意见"等全局护栏。
+LAWYER_IDENTITY_PROMPT = """你是 LawClaw 律爪，一位专业的中国法律 AI 助手，服务于独立执业律师。
 
 ## 核心职责
 1. 提供准确、专业的中国法律分析和建议
@@ -83,33 +86,46 @@ LAWYER_SYSTEM_PROMPT = """你是 LawClaw 律爪，一位专业的中国法律 AI
 - 涉及合同审查时，关注效力性条款、风险分配、违约责任三大维度
 - 涉及证据分析时，关注证据的关联性、合法性、真实性
 - 涉及文书起草时，确保格式规范、用语准确、逻辑清晰
+"""
 
-## 执业伦理
+GUARDRAIL_PROMPT = """
+
+---
+
+## 全局执业规范（无论当前以何种身份回答，以下要求始终适用）
+
+### 执业伦理
 - 始终维护委托人合法权益
 - 提示利益冲突风险
 - 严格遵守保密义务
 - 明确告知「本分析仅供参考，不构成正式法律意见」
 
-## 工具使用
+### 工具使用
 - 优先使用元典 MCP 工具检索最新法条和案例
 - 法条引用前应验证其现行有效性
 - 复杂法律问题建议多角度分析
 - 对方代理律师策略预判时，基于类案数据分析而非主观臆断
 
-## 输出格式
+### 输出格式
 - 法律分析：结论先行 → 法条依据 → 事实适用 → 风险提示
 - 合同审查：风险条款标注（🔴高风险/🟡中风险/🟢低风险）+ 修改建议
 - 文书起草：标题 + 当事人信息 + 正文 + 落款日期
 - 案例分析：案件事实 → 争议焦点 → 法院说理 → 判决要旨 → 实务启示
 """
 
+LAWYER_SYSTEM_PROMPT = LAWYER_IDENTITY_PROMPT + GUARDRAIL_PROMPT
+
 def build_lawyer_system_prompt(profile: dict = None, base_prompt: str = None) -> str:
     """根据律师执业画像构建个性化系统提示词。
 
     profile: 来自前端 setupStore.profile 的律师信息
-    base_prompt: 自定义系统提示词（如专家角色）；为空则使用默认 LAWYER_SYSTEM_PROMPT
+    base_prompt: 自定义身份层提示词（如专家角色 persona）；为空则使用默认律师身份。
+                 无论传入与否，GUARDRAIL_PROMPT（执业伦理/工具纪律/输出格式）始终在场。
     """
-    prompt = base_prompt or LAWYER_SYSTEM_PROMPT
+    if base_prompt:
+        prompt = base_prompt.rstrip() + GUARDRAIL_PROMPT
+    else:
+        prompt = LAWYER_SYSTEM_PROMPT
     if not profile or not isinstance(profile, dict):
         return prompt
 
@@ -635,6 +651,9 @@ def handle_chat(message: str, api_key=None, base_url=None, model=None,
             except Exception:
                 pass
 
+        # ── 统一入口：身份层（专家 persona 或默认律师）+ 固定护栏层 + 画像 ──
+        base_with_guardrails = build_lawyer_system_prompt(profile, system_prompt)
+
         # If a specific skill was activated, inject full SKILL.md workflow
         if skill_id:
             skill_content = _load_skill_content(skill_id)
@@ -644,20 +663,30 @@ def handle_chat(message: str, api_key=None, base_url=None, model=None,
                 if s["id"] == skill_id:
                     skill_name = s["name"]
                     break
+            # 专家身份与技能工作流同时挂载时，明确协调规则（避免 persona 的
+            # "职责清单"与技能的"步骤清单"互相打架）
+            coordination = ""
+            if system_prompt:
+                coordination = (
+                    "\n\n[身份与工作流协调规则]\n"
+                    "当前会话同时挂载了专家身份与技能工作流，按以下优先级执行：\n"
+                    "1. 执行层面以技能工作流为准，按其步骤完成全部操作\n"
+                    "2. 专家身份只约束你的视角、语气与专业深度，其职责清单不替代技能步骤\n"
+                    "3. 两者冲突时以技能工作流为准；执业伦理与保密要求始终优先\n"
+                )
             if skill_content:
-                combined_prompt = (system_prompt or LAWYER_SYSTEM_PROMPT) + (
+                combined_prompt = base_with_guardrails + coordination + (
                     f"\n\n[用户激活技能: {skill_name}]\n"
                     f"请严格遵循以下技能工作流指令执行，按步骤完成所有要求的操作：\n\n"
                     f"{skill_content}\n"
                 )
             else:
-                combined_prompt = (system_prompt or LAWYER_SYSTEM_PROMPT) + (
+                combined_prompt = base_with_guardrails + coordination + (
                     f"\n\n[用户激活技能: {skill_name}]\n"
                     f"用户明确要求使用「{skill_name}」技能。请遵循该技能的标准流程执行。"
                 )
         else:
-            # 注入执业画像到系统提示词（P0-3）
-            combined_prompt = build_lawyer_system_prompt(profile, system_prompt)
+            combined_prompt = base_with_guardrails
 
         # ── 构建 OpenAI 格式的 conversation_history ──
         # 前端传入的 history 已是 [{role, content}, ...] 格式

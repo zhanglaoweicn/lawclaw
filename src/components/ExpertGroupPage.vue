@@ -169,24 +169,13 @@ function summonRole(role: ExpertRole, group: ExpertGroup) {
 }
 
 function summonGroup(group: ExpertGroup) {
-  // Build combined prompt with detailed role instructions
-  const roleSummaries = group.roles.map(r =>
-    `- ${r.icon} ${r.name}：${r.description}`
-  ).join('\n')
-
-  const detailedRoles = group.roles.map(r =>
-    `\n## ${r.icon} ${r.name}\n${r.systemPrompt}`
-  ).join('')
-
-  const groupPrompt = `你是一个综合法律专家团队，汇集了${group.name}的全部专业能力。\n\n该团队包含以下专家角色：\n${roleSummaries}\n\n各专家详细能力说明：${detailedRoles}\n\n请根据用户的问题，以最合适的专家角色身份进行回答。如果需要多角色协作（如先研究后起草），请自动协调。`
-
-  chatStore.newSession()
-  const s = chatStore.activeSession
-  if (s) {
-    s.title = group.name + '（整团）'
-    s.systemPrompt = groupPrompt
-    s.expertRoleId = ''
-  }
+  // 整团提示词组装统一在 expert store（buildGroupPrompt），会话创建/落盘统一在 chat store
+  chatStore.newSessionWithExpertGroup(
+    { id: group.id, name: group.name, systemPrompt: expertStore.buildGroupPrompt(group) },
+    matterStore.activeMatterId || undefined,
+  )
+  // 开场问题预填输入框但不自动发送（与单角色召唤行为一致）
+  chatStore.setPendingPrefill(`请介绍一下「${group.name}」能为我提供哪些支持`)
   ElMessage.success(`已召唤「${group.name}」整团`)
   emit('enter-chat', chatStore.activeSessionId!)
 }

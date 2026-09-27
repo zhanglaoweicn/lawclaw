@@ -149,9 +149,9 @@ export interface Session {
   updatedAt: Date
   messageCount: number
   summary?: string
-  /** Expert role system prompt attached to this session */
+  /** Expert role system prompt attached to this session (also used by group summon) */
   systemPrompt?: string
-  /** Which expert role this session belongs to (group.role) */
+  /** Expert role id, or `group:<gid>` when a whole expert group is summoned */
   expertRoleId?: string
 }
 

@@ -596,6 +596,7 @@ export const useChatStore = defineStore('chat', () => {
       }
 
       // ── 案件知识库：该案件已解析文件的全文（后端 BM25 按问题选段注入） ──
+      // ── 判例库（B1 agent 侧）：本案已归档判决书的结构化判例卡（后端无条件注入专用块） ──
       try {
         const { useMatterStore: useMS2 } = await import('./matter')
         const matterStore2 = useMS2()
@@ -610,6 +611,13 @@ export const useChatStore = defineStore('chat', () => {
           if (docs.length) {
             params.matter_documents = docs
             params.matter_id = matterId
+          }
+          const caseCards = fs.files
+            .filter(f => f.matterId === matterId && f.caseCard?.ok)
+            .slice(0, 6)
+            .map(f => ({ ...(f.caseCard as Record<string, unknown>), filename: f.name }))
+          if (caseCards.length) {
+            params.matter_case_cards = caseCards
           }
         }
       } catch {
@@ -649,6 +657,31 @@ export const useChatStore = defineStore('chat', () => {
               date: e.createdAt instanceof Date ? e.createdAt.toISOString() : String(e.createdAt),
             })
           }
+        }
+        // ── 跨案件判例卡进经验召回语料（本案判例走 matter_case_cards 专用块，此处排除） ──
+        try {
+          const { useFileStore: useFS3 } = await import('./fileStore')
+          const fs3 = useFS3()
+          const currentMatterId = (curSession?.matterId || matterStore.activeMatterId || '') as string
+          for (const f of fs3.files) {
+            const cc = f.caseCard
+            if (!cc?.ok || !cc.case_number || f.matterId === currentMatterId) continue
+            const text = [
+              cc.cause, cc.court,
+              cc.amount ? `判决金额¥${cc.amount.toLocaleString('zh-CN')}` : '',
+              cc.judgment_date ? `判决日期${cc.judgment_date}` : '',
+              cc.reasoning ? `本院认为：${cc.reasoning.slice(0, 120)}` : '',
+            ].filter(Boolean).join('；')
+            expItems.push({
+              id: `cc-${f.id}`,
+              matterTitle: matterStore.matters.find(m => m.id === f.matterId)?.title || '历史案件',
+              title: `判例·${cc.cause || '判决书'}·${cc.case_number}`,
+              text,
+              type: 'judgment',
+            })
+          }
+        } catch {
+          // 文件库未就绪，跳过判例语料
         }
         if (expItems.length) params.experience_items = expItems.slice(0, 400)
       } catch {

@@ -667,11 +667,14 @@ export const useChatStore = defineStore('chat', () => {
             const cc = f.caseCard
             if (!cc?.ok || !cc.case_number || f.matterId === currentMatterId) continue
             const text = [
-              cc.cause, cc.court,
+              cc.cause,
+              cc.court,
               cc.amount ? `判决金额¥${cc.amount.toLocaleString('zh-CN')}` : '',
               cc.judgment_date ? `判决日期${cc.judgment_date}` : '',
               cc.reasoning ? `本院认为：${cc.reasoning.slice(0, 120)}` : '',
-            ].filter(Boolean).join('；')
+            ]
+              .filter(Boolean)
+              .join('；')
             expItems.push({
               id: `cc-${f.id}`,
               matterTitle: matterStore.matters.find(m => m.id === f.matterId)?.title || '历史案件',

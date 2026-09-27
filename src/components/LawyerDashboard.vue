@@ -92,6 +92,9 @@
       <div v-if="briefingLoading" style="font-size:12px;color:var(--legal-text-muted);padding:6px 0">
         <el-icon class="is-loading"><Loading /></el-icon> 值守助手正在分析案件扫描结果…
       </div>
+      <div v-else-if="briefingStale && !briefing" class="watchdog-briefing-stale">
+        历史晨报基于旧案件台账生成，为避免误导已隐藏；告警请以上方实时扫描为准，可点「生成 AI 晨报」重新生成。
+      </div>
       <div v-else-if="briefing" class="watchdog-briefing" v-html="briefingHtml"></div>
     </div>
 
@@ -314,6 +317,7 @@ const quickQuestion = ref('')
 const watchdog = ref<{ syncedAt: string | null; matters: number; alerts: Array<{ kind: string; matter: string; detail: string; date: string; days: number }> }>({ syncedAt: null, matters: 0, alerts: [] })
 const watchdogVisible = ref(false)
 const briefing = ref<string | null>(null)
+const briefingStale = ref(false)
 const briefingLoading = ref(false)
 // 晨报内容含案件数据与 LLM 输出（不可信）——必须走统一消毒出口，禁止裸 marked.parse
 const briefingHtml = computed(() => renderMarkdown(briefing.value || ''))
@@ -334,7 +338,9 @@ async function syncWatchdog() {
     watchdog.value = await backend.watchdogStatus()
     watchdogVisible.value = true
     const b = await backend.watchdogBriefing()
-    if (b.found && b.output) briefing.value = b.output
+    briefingStale.value = !!b.stale
+    if (b.found && b.output && !b.stale) briefing.value = b.output
+    else if (b.stale) briefing.value = null // 历史晨报基于旧台账，避免幽灵告警
     watchdogRetries = 0
   } catch (e: any) {
     // 值守为增强功能，静默降级；冷启动 WS 就绪竞态重试，但有上限与退避
@@ -674,6 +680,16 @@ function openSession(s: { id: string }) {
 .wa-stale { border-left: 3px solid var(--legal-text-muted); }
 .wa-matter { font-weight: var(--weight-medium); flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 46%; }
 .wa-detail { color: var(--legal-text-secondary); }
+.watchdog-briefing-stale {
+  font-size: 12px;
+  color: var(--legal-text-muted);
+  background: var(--el-fill-color-light);
+  border: 1px dashed var(--el-border-color);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-top: 4px;
+}
+
 .watchdog-briefing {
   margin-top: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.7;
   background: var(--legal-bg-card); border: 1px dashed var(--el-border-color); border-radius: var(--radius-sm);

@@ -112,7 +112,12 @@ export const useFileStore = defineStore('file', () => {
       if (r?.ok && r.text && r.text.length > 30) {
         f.extractedText = r.text
         f.extractor = r.extractor
-        await db.updateFile(f.id, { extractedText: r.text, extractor: r.extractor })
+        if (r.caseCard?.ok) {
+          f.caseCard = r.caseCard
+          await db.updateFile(f.id, { extractedText: r.text, extractor: r.extractor, caseCard: r.caseCard })
+        } else {
+          await db.updateFile(f.id, { extractedText: r.text, extractor: r.extractor })
+        }
       }
     } catch {
       // 后端未连接/解析失败 → 文件仍可管理，只是无全文

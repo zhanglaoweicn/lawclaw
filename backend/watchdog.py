@@ -193,8 +193,15 @@ def get_latest_briefing(job_name: str = _MORNING_JOB) -> Dict[str, Any]:
                 status = recs[0].get("status") or status
         except Exception:
             pass
+        # 内容级新鲜度判定：晨报里提到的案件若一个都不在当前在册名单中，
+        # 说明它是基于旧台账生成的（幽灵告警来源）——前端据此加口径提示。
+        matters = load_synced_matters()
+        names = [m.get("title", "") for m in matters if m.get("title")]
+        has_alerts = ("项告警" in body and "共 0 项告警" not in body) or "已逾期" in body
+        stale = bool(has_alerts and names and not any(n in body for n in names))
         return {"found": True, "output": body[:4000], "status": status,
-                "at": datetime.fromtimestamp(latest.stat().st_mtime).isoformat(timespec="seconds")}
+                "at": datetime.fromtimestamp(latest.stat().st_mtime).isoformat(timespec="seconds"),
+                "stale": stale}
     except Exception as e:
         return {"found": False, "error": str(e)[:120]}
 

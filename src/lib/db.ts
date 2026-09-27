@@ -49,6 +49,7 @@ export interface FileRecord {
   data: string
   extractedText?: string
   extractor?: string
+  caseCard?: import('../types/legal').CaseCard
 }
 
 export async function getAllFiles(): Promise<FileRecord[]> {

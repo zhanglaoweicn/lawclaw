@@ -41,6 +41,15 @@
             <el-icon size="16"><AlarmClock /></el-icon>
             <span class="cdv-countdown-text">{{ countdownText }}</span>
             <span class="cdv-countdown-date">{{ formatDate(matter.courtDate) }} · {{ matter.courtName || '未知法院' }}</span>
+            <el-button
+              size="small"
+              :type="daysToCourt <= 3 ? 'danger' : 'default'"
+              round
+              style="margin-left:auto"
+              @click="showCourtMode = true"
+            >
+              ⚖️ 开庭模式
+            </el-button>
           </div>
 
           <!-- 多期限列表 banner（替代旧单一 deadline banner） -->
@@ -272,6 +281,8 @@
                   <el-icon size="14"><Document /></el-icon>
                   <span class="file-group-name">{{ f.name }}</span>
                   <span v-if="f.category === 'AI生成'" class="fgp-ai-tag">AI</span>
+                  <span v-if="f.caseCard?.ok" class="fgp-card-tag" title="已识别为判决书，点击查看判例卡"
+                    @click.stop="caseCardFile = f">⚖ 判例卡</span>
                 </div>
               </div>
             </div>
@@ -561,6 +572,34 @@
       </el-button>
     </template>
   </el-dialog>
+        <!-- 开庭模式（庭前聚合视图） -->
+        <CourtModeDialog
+          v-if="props.matterId"
+          :matter-id="props.matterId"
+          :visible="showCourtMode"
+          @close="showCourtMode = false"
+          @ask="askInCourtMode"
+        />
+
+        <!-- 判例卡（判决书结构化信息） -->
+        <el-dialog v-model="showCaseCardDialog" title="⚖ 判例卡" width="560px" append-to-body>
+          <template v-if="caseCardFile?.caseCard">
+            <div class="case-card-grid">
+              <div class="case-card-row"><span class="cc-label">案号</span><span class="cc-value">{{ caseCardFile.caseCard.case_number || '—' }}</span></div>
+              <div class="case-card-row"><span class="cc-label">法院</span><span class="cc-value">{{ caseCardFile.caseCard.court || '—' }}</span></div>
+              <div class="case-card-row"><span class="cc-label">案由</span><span class="cc-value">{{ caseCardFile.caseCard.cause || '—' }}</span></div>
+              <div class="case-card-row"><span class="cc-label">判决金额</span><span class="cc-value">{{ caseCardFile.caseCard.amount ? '¥ ' + caseCardFile.caseCard.amount.toLocaleString('zh-CN') + ' 元' : '—' }}</span></div>
+              <div class="case-card-row"><span class="cc-label">判决日期</span><span class="cc-value">{{ caseCardFile.caseCard.judgment_date || '—' }}</span></div>
+              <div class="case-card-row"><span class="cc-label">识别置信度</span><span class="cc-value">{{ caseCardFile.caseCard.confidence === 'high' ? '高' : caseCardFile.caseCard.confidence === 'medium' ? '中' : '低' }}</span></div>
+            </div>
+            <div v-if="caseCardFile.caseCard.reasoning" class="case-card-reasoning">
+              <div class="cc-label" style="margin-bottom:4px">本院认为（摘录）</div>
+              <p>{{ caseCardFile.caseCard.reasoning }}</p>
+            </div>
+          </template>
+        </el-dialog>
+
+
 </template>
 
 <script setup lang="ts">
@@ -574,6 +613,7 @@ import { useFileEditor } from '../../composables/useFileEditor'
 import { useChatStore } from '../../stores/chat'
 import { useTimelineStore } from '../../stores/timeline'
 import { useScheduleStore } from '../../stores/schedule'
+import CourtModeDialog from './CourtModeDialog.vue'
 import { backend } from '../../lib/backend'
 import { renderMarkdown } from '../../lib/markdown'
 import { dataUrlToText } from '../../lib/encoding'
@@ -585,7 +625,7 @@ import {
   getActiveDeadlines,
   type DeadlineUrgency,
 } from '../../lib/caseConstants'
-import type { DeadlineType, DeadlineItem } from '../../types/legal'
+import type {DeadlineType, DeadlineItem , ManagedFile}  from '../../types/legal'
 
 const props = defineProps<{
   matterId: string | null
@@ -957,6 +997,31 @@ const countdownClass = computed(() => {
   if (diff < 7 * 86400000) return 'cdv-countdown-soon'
   return ''
 })
+
+// ── 开庭模式（评审 A1：庭前聚合视图） ──
+const showCourtMode = ref(false)
+const daysToCourt = computed(() => {
+  if (!matter.value?.courtDate) return 999
+  const target = new Date(matter.value.courtDate)
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const targetDay = new Date(target.getFullYear(), target.getMonth(), target.getDate())
+  return Math.round((targetDay.getTime() - today.getTime()) / 86400000)
+})
+
+// ── 判例卡（B1：判决书结构化展示） ──
+const caseCardFile = ref<ManagedFile | null>(null)
+const showCaseCardDialog = computed({
+  get: () => caseCardFile.value != null,
+  set: (v: boolean) => { if (!v) caseCardFile.value = null },
+})
+
+function askInCourtMode(text: string) {
+  showCourtMode.value = false
+  openChat()
+  if (chatStore.activeSessionId) {
+    chatStore.setPendingPrefill(text)
+  }
+}
 
 const countdownText = computed(() => {
   if (!matter.value?.courtDate) return ''
@@ -1617,6 +1682,24 @@ function confirmEdit() {
 .file-group-title { font-size: 12px; font-weight: var(--weight-semibold); color: var(--legal-text-secondary); margin-bottom: 4px; }
 
 .file-group-items { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.fgp-card-tag {
+  font-size: 10px;
+  color: var(--legal-gold-dark);
+  border: 1px solid var(--legal-gold-lighter);
+  border-radius: 8px;
+  padding: 0 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.fgp-card-tag:hover { background: var(--legal-gold-bg); }
+
+.case-card-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.case-card-row { display: flex; gap: 12px; font-size: 13px; }
+.cc-label { width: 72px; flex-shrink: 0; color: var(--legal-text-muted); }
+.cc-value { font-weight: 500; }
+.case-card-reasoning { background: var(--el-fill-color-light); border-radius: 8px; padding: 10px 12px; }
+.case-card-reasoning p { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--legal-text); }
 
 .file-group-item {
   display: flex;

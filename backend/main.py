@@ -37,6 +37,7 @@ if env_path.exists():
 from run_agent import AIAgent
 from tools.mcp_tool_discovery import discover_mcp_tools  # 上游 2026-09 重构：MCP 发现独立模块
 import doc_intel  # 文档抽取适配层 + 案件知识库 + 经验记忆（BM25）
+import case_card  # 判例卡抽取（判决书 → 结构化案例卡，B1 判例库地基）
 from citations import DEPRECATED_LAWS, extract_citations, num_to_cn as _num_to_cn  # 法条引用抽取（纯函数模块）
 import npc_law  # 国家法律法规数据库（flk.npc.gov.cn）官方时效性主源
 import watchdog  # 值守助手（案件扫描告警 + Hermes cron 晨报/周报）
@@ -2003,6 +2004,33 @@ SKILL_DISPLAY_NAMES = {
 }
 
 
+# 技能描述里的 CLI 参数 → 用户可读短语（映射表优先，未命中的参数 token 删除）
+_SKILL_CLI_PHRASES = [
+    ("--check-integrations", "重新检测集成"),
+    ("--new-deal", "新建交易"),
+    ("--decide CMT-ID", "登记意见决策"),
+    ("--close GAP-ID", "关闭差距"),
+    ("--accept GAP-ID", "风险接受"),
+    ("--redo", "重新初始化"),
+]
+_SKILL_CLI_RE = re.compile(r"\s--[a-z][a-z0-9-]*")
+
+def _clean_skill_description(desc: str) -> str:
+    """把技能 frontmatter 描述里的开发元数据清洗为用户可读文案。
+
+    泄漏源实证：`user-invocable: false`（frontmatter 字段）与 `--redo` 类 CLI 参数
+    直接出现在技能页描述里——用户不该看到安装层词汇。
+    """
+    if not desc:
+        return desc
+    d = re.sub(r"\s*user-invocable:\s*\w+\s*", " ", desc)
+    for token, phrase in _SKILL_CLI_PHRASES:
+        d = d.replace(token, phrase)
+    d = _SKILL_CLI_RE.sub(" ", d)
+    d = re.sub(r"\s{2,}", " ", d)
+    return d.strip().strip("，、；。").strip()
+
+
 def handle_list_hermes_skills() -> dict:
     global _skills_cache, _skills_cache_at
     import time as _time
@@ -2036,6 +2064,7 @@ def handle_list_hermes_skills() -> dict:
             cn = SKILL_DISPLAY_NAMES.get(parsed["id"])
             if cn:
                 parsed["name"] = cn
+            parsed["description"] = _clean_skill_description(parsed.get("description", ""))
             result.append(parsed)
     _skills_cache = result
     _skills_cache_at = _time.time()
@@ -2144,7 +2173,14 @@ def handle_request(method: str, params: dict) -> dict:
             raw = _b64.b64decode(data_b64) if data_b64 else b""
         except Exception:
             raw = b""
-        return doc_intel.extract_document_text(fname, raw)
+        result = doc_intel.extract_document_text(fname, raw)
+        # B1 判例库地基：判决书自动抽结构化判例卡（失败不影响解析主结果）
+        try:
+            if isinstance(result, dict) and result.get("ok") and result.get("text"):
+                result["caseCard"] = case_card.extract_case_card(result["text"])
+        except Exception:
+            pass
+        return result
     elif method == "kb_search":
         return doc_intel.kb_search(
             params.get("matter_id", "default"),

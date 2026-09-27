@@ -482,6 +482,22 @@ export interface ManagedFile {
   extractedText?: string
   /** 使用的解析器（pymupdf4llm/pymupdf/pdfminer/python-docx/openpyxl/plain） */
   extractor?: string
+  /** 判例卡（判决书自动抽取的结构化信息，B1 判例库地基） */
+  caseCard?: CaseCard
+}
+
+/** 判决书结构化判例卡（后端 case_card.py 抽取） */
+export interface CaseCard {
+  ok: boolean
+  case_number?: string
+  court?: string
+  cause?: string
+  /** 判决主文最大金额（元） */
+  amount?: number
+  judgment_date?: string
+  /** “本院认为”段摘录（≤500 字） */
+  reasoning?: string
+  confidence?: 'high' | 'medium' | 'low'
 }
 
 // ── Navigation types ──

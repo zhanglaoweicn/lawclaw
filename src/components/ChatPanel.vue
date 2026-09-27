@@ -475,7 +475,7 @@ const editingMessageId = ref<string | null>(null)
 const editMessageText = ref('')
 
 const skills = computed(() => skillStore.skills)
-const welcomeSkills = computed(() => skills.value.slice(0, 8))
+const welcomeSkills = computed(() => skillStore.getWelcomeSkills())
 
 // ── Popover visibility ──
 const showSkillPopover = ref(false)

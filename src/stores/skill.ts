@@ -9,6 +9,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { LegalSkill } from '../types/legal'
 import { backend } from '../lib/backend'
+import { useSetupStore } from './setup'
 
 const USAGE_KEY = 'lawclaw_skill_usage'
 const CUSTOM_SKILLS_KEY = 'lawclaw_custom_skills'
@@ -199,14 +200,70 @@ export const useSkillStore = defineStore('skill', () => {
     return Array.from(groups)
   })
 
+  // 画像执业领域 → 技能分组优先序（评审 A2：推荐与排序跟随画像，而非固定顺序）
+  const PRACTICE_AREA_GROUPS: Record<string, string[]> = {
+    '民商事诉讼': ['诉讼业务', '民事诉讼', '法律检索', '中国法律研究'],
+    '合同纠纷': ['商业合同', '合同审阅', '民事诉讼'],
+    '劳动人事': ['劳动人事'],
+    '知识产权': ['知识产权'],
+    '公司并购': ['公司业务', '投融资'],
+    '房地产与建设工程': ['民事诉讼', '诉讼业务'],
+    '婚姻家事': ['婚姻家事'],
+    '刑事辩护': ['刑事辩护'],
+    '行政诉讼': ['诉讼业务'],
+    '常年法律顾问': ['公司业务', '商业合同', '劳动人事'],
+  }
+
+  function preferredGroups(): string[] {
+    const prio: string[] = []
+    try {
+      const setupStore = useSetupStore()
+      const areas = (setupStore.profile?.practiceAreas || []) as string[]
+      for (const a of Array.isArray(areas) ? areas : [areas]) {
+        for (const g of PRACTICE_AREA_GROUPS[a] || []) {
+          if (!prio.includes(g)) prio.push(g)
+        }
+      }
+    } catch {
+      // 画像未就绪，按默认顺序
+    }
+    return prio
+  }
+
   function getSkillsByGroup(): Record<string, LegalSkill[]> {
     const map: Record<string, LegalSkill[]> = {}
-    const all = skills.value
-    for (const s of all) {
+    for (const s of skills.value) {
       if (!map[s.group]) map[s.group] = []
       map[s.group].push(s)
     }
-    return map
+    const ordered: Record<string, LegalSkill[]> = {}
+    for (const g of preferredGroups()) {
+      if (map[g]) ordered[g] = map[g]
+    }
+    for (const g of Object.keys(map)) {
+      if (!ordered[g]) ordered[g] = map[g]
+    }
+    return ordered
+  }
+
+  /** 欢迎页推荐 8 卡：最近使用 → 画像优先组 → 默认顺序 */
+  function getWelcomeSkills(): LegalSkill[] {
+    const picks: LegalSkill[] = []
+    const push = (s?: LegalSkill) => {
+      if (s && !picks.some(p => p.id === s.id) && picks.length < 8) picks.push(s)
+    }
+    try {
+      const recent: string[] = JSON.parse(localStorage.getItem('lawclaw_skill_recent') || '[]')
+      for (const id of recent) push(findSkill(id))
+    } catch {
+      // recent 损坏时跳过
+    }
+    const prio = preferredGroups()
+    for (const g of prio) {
+      for (const s of skills.value.filter(x => x.group === g)) push(s)
+    }
+    for (const s of skills.value) push(s)
+    return picks
   }
 
   function findSkill(id: string): LegalSkill | undefined {
@@ -259,7 +316,7 @@ export const useSkillStore = defineStore('skill', () => {
 
   return {
     skills, customSkills, backendSkills, usageCount, allGroups, backendSkillsLoaded,
-    getSkillsByGroup, findSkill,
+    getSkillsByGroup, getWelcomeSkills, findSkill,
     recordUsage, getUsageCount, mostUsed, recordRecent,
     addCustomSkill, removeCustomSkill, updateCustomSkill,
     fetchBackendSkills,

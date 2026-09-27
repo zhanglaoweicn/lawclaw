@@ -287,6 +287,7 @@ export class BackendClient {
     text?: string
     extractor?: string
     chars?: number
+    caseCard?: import('../types/legal').CaseCard
     error?: string
   }> {
     return this.call('parse_document', { filename, data_base64: dataBase64 })
@@ -377,7 +378,7 @@ export class BackendClient {
   /** 值守助手：最近晨报/周报 */
   async watchdogBriefing(
     job = 'lawclaw-morning-briefing',
-  ): Promise<{ found: boolean; output?: string; status?: string; at?: string; error?: string }> {
+  ): Promise<{ found: boolean; output?: string; status?: string; at?: string; stale?: boolean; error?: string }> {
     return this.call('watchdog_briefing', { job })
   }
 
